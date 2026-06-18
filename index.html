@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amsonstock Alumrock</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<style>
+    /* Force inner library video canvas layers to perfectly align under container constraints */
+    #qrScannerInternalTarget video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-height: 320px !important;
+    }
+    #qrScannerInternalTarget {
+        overflow: hidden !important;
+    }
+</style>
+
+<body class="bg-black text-gray-100 font-roboto min-h-screen">
+
+    <div class="max-w-md mx-auto pt-6 px-4">
+        <div id="authMessage" class="hidden p-4 shadow-2xl shadow-amber-400/50 rounded-lg text-base font-semibold border text-center"></div>
+    </div>
+
+    <div id="authSection" class="flex items-center justify-center min-h-[85vh] bg-black">
+        <div class="bg-black p-8 rounded-xl shadow-2xl w-full max-w-md border-2 border-white">
+
+            <div id="loginFormContainer">
+                <h2 class="text-3xl font-bold mb-6 text-center text-amber-100 tracking-wide">Amsons Login System</h2>
+                
+                <div id="biometricScanContainer" class="mb-5 text-center border-2 border-amber-400/30 p-5 rounded-lg bg-neutral-950/60">
+                    <p id="scannerStatusText" class="text-sm font-bold text-amber-400 animate-pulse uppercase tracking-wider mb-3">👤 Initializing Auto Face Verification...</p>
+                    
+                    <div class="relative w-full h-44 mx-auto max-w-[240px] rounded-lg overflow-hidden border-2 border-white">
+                        <video id="loginWebcamStream" autoplay playsinline class="w-full h-full object-cover"></video>
+                        <canvas id="loginPhotoCanvas" class="w-full h-full object-cover hidden"></canvas>
+                        
+                        <div id="scannerOverlayLine" class="absolute inset-x-0 top-0 h-0.5 bg-amber-400 opacity-75 shadow-[0_0_8px_#fbbf24] animate-[bounce_2s_infinite]"></div>
+                    </div>
+                    
+                    <button type="button" id="toggleScanStateBtn" onclick="handleScanStateToggle()" class="mt-4 text-xs font-medium text-gray-400 hover:text-red-400 transition underline focus:outline-none">
+                        Pause Auto Scanning
+                    </button>
+                </div>
+
+                <div id="manualLoginContainer" class="border-t-2 border-gray-800 pt-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Manual Credentials Fallback</span>
+                        <span id="fallbackNoticeBadge" class="hidden text-xs bg-red-500/10 text-red-400 px-2.5 py-1 rounded border border-red-500/30 font-bold">Face ID Timeout</span>
+                    </div>
+                    
+                    <form id="loginForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1.5 text-gray-300">Staff ID / User ID</label>
+                            <input type="text" id="loginUsername" required placeholder="Enter your allocated ID" class="w-full p-3 bg-black border-2 border-white rounded-lg text-white font-medium text-sm focus:outline-none focus:border-amber-400">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1.5 text-gray-300">Password</label>
+                            <input type="password" id="loginPassword" required class="w-full p-3 bg-black border-2 border-white rounded-lg text-white font-medium text-sm focus:outline-none focus:border-amber-400">
+                        </div>
+                        <div class="flex items-center justify-end mt-2 mb-2">
+                            <button type="button" onclick="displayForgotPasswordUIHandler(true)" class="text-xs text-amber-400 hover:text-amber-300 transition underline focus:outline-none tracking-wide font-medium">Forgot Credentials Password?</button>
+                        </div>
+
+                        <div id="forgotPasswordContainerBox" class="hidden mb-4 p-4 border-2 border-dashed border-amber-500/60 rounded-lg bg-neutral-950/90 space-y-4">
+                            <h4 class="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1">🔑 Account Credentials Reset Requests</h4>
+                            <p class="text-xs text-gray-400 leading-relaxed">Provide registration matching Staff Identity ID metrics and verified email address network link validation mapping tracker tags to reset payload codes.</p>
+                            
+                            <div>
+                                <label class="block text-xs font-semibold mb-1 text-gray-400">Allocated User Identity ID</label>
+                                <input type="text" id="forgotStaffIdInput" placeholder="AMS-2026-XXX" class="w-full p-2.5 bg-black border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold mb-1 text-gray-400">Verified Email Directory Address</label>
+                                <input type="email" id="forgotEmailInput" placeholder="name@domain.com" class="w-full p-2.5 bg-black border border-neutral-700 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400">
+                            </div>
+                            
+                            <div class="flex gap-2 justify-end pt-1">
+                                <button type="button" onclick="displayForgotPasswordUIHandler(false)" class="text-xs font-medium border border-gray-600 text-gray-400 px-3 py-1.5 rounded-lg hover:bg-gray-900 transition">Cancel</button>
+                                <button type="button" onclick="executeSecurePasswordResetPipeline()" class="text-xs bg-amber-400 text-black font-bold px-4 py-1.5 rounded-lg hover:bg-amber-500 transition">Verify and Reset</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="w-full bg-amber-400 hover:bg-amber-500 text-black font-bold p-3 rounded-lg transition uppercase tracking-wider text-sm shadow-md">Secure Access</button>
+                    </form>
+                </div>
+
+                <p class="text-sm text-center text-gray-400 mt-6">
+                    New staff member? 
+                    <button onclick="toggleAuthMode(true); initializeRegistrationFormUI();" class="text-amber-400 hover:underline font-bold focus:outline-none">Register Account Here</button>
+                </p>
+            </div>
+            
+            <div id="registerFormContainer" class="hidden">
+                <h2 class="text-3xl font-bold mb-6 text-center text-amber-400 tracking-wide">Staff Registration</h2>
+                <form id="registerForm" class="space-y-4">
+                    <div class="mb-4 p-4 bg-gray-900 border-2 border-amber-500 rounded-xl text-center">
+                        <span class="text-xs text-gray-400 uppercase tracking-wider block font-semibold">Your Allocated Staff ID</span>
+                        <h2 id="liveAllocatedIdDisplay" class="text-2xl font-bold text-amber-400 mt-1 font-mono">AMS-XXXX-XXX</h2>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-300">Your Name</label>
+                        <input type="text" id="regName" required class="w-full p-3 bg-black border border-neutral-700 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-300">Email Address</label>
+                        <input type="email" id="regEmail" required placeholder="name@domain.com" class="w-full p-3 bg-black border border-neutral-700 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-amber-400">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-300">Secure Password</label>
+                        <input type="password" id="registerPassword" required class="w-full p-3 bg-black border border-neutral-700 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-amber-400">
+                        <p class="text-xs text-gray-400 mt-1.5">*Requires 8+ chars, 1 uppercase, 1 lowercase, 1 number, and 1 symbol.</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold mb-1 text-gray-300">System Permission Role</label>
+                        <select id="registerRole" class="w-full p-3 bg-black border border-neutral-700 rounded-lg text-white font-medium text-sm focus:outline-none focus:border-amber-400">
+                            <option value="staff" class="bg-black">Warehouse Staff</option>
+                            <option value="admin" class="bg-black">System Administrator</option>
+                        </select>
+                    </div>
+
+                    <div class="border-2 border-dashed border-neutral-700 p-4 rounded-xl bg-neutral-950">
+                        <label class="block text-sm font-bold mb-2 text-amber-400">📸 AI Face Recognition Enrollment</label>
+                        <video id="webcamStream" autoplay playsinline class="w-full h-48 bg-black rounded-lg border border-neutral-800 object-cover hidden"></video>
+                        <canvas id="photoCanvas" class="w-full h-48 bg-black rounded-lg border border-neutral-800 object-cover hidden"></canvas>
+                        <div class="mt-3 flex gap-2 justify-center">
+                            <button type="button" id="startCamBtn" onclick="initializeWebcam()" class="text-xs font-semibold bg-transparent border-2 border-white text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition">Start Camera</button>
+                            <button type="button" id="captureSnapBtn" onclick="captureSnapshot()" class="text-xs bg-amber-400 text-black font-bold px-4 py-2 rounded-lg hover:bg-amber-500 transition hidden">Take Snapshot</button>
+                        </div>
+                        <input type="hidden" id="capturedPhotoData">
+                    </div>
+
+                    <button type="submit" class="w-full bg-amber-400 hover:bg-amber-500 text-black font-bold p-3 rounded-lg transition uppercase tracking-wider text-sm shadow-md">Submit Registration</button>
+                </form>
+                <p class="text-sm text-center text-gray-400 mt-5">
+                    Already registered? 
+                    <button onclick="toggleAuthMode(false)" class="text-amber-400 hover:underline font-bold focus:outline-none">Return to Login</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboardSection" class="hidden min-h-screen bg-[#0A0A0A] text-gray-100 flex w-full">
+        
+        <aside class="w-64 bg-[#050505] border-r-2 border-neutral-900 flex flex-col justify-between shrink-0">
+            <div class="p-5">
+                <div class="mb-6 border-b-2 border-neutral-900 pb-4">
+                    <h2 class="text-3xl font-bold tracking-wider text-amber-400 font-serif">Amsons</h2>
+                    <p class="text-[10px] text-amber-500/70 tracking-widest uppercase font-mono font-bold">YOUR ISLAMIC LIFESTYLE</p>
+                </div>
+                
+                <nav class="space-y-1.5">
+                    <button class="w-full flex items-center gap-3 px-4 py-3 bg-amber-400/10 border-l-4 border-amber-400 text-amber-400 font-bold text-xs rounded-r transition tracking-wide">
+                        📊 DASHBOARD
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-neutral-900 font-bold text-xs rounded transition text-left tracking-wide">
+                        📥 STOCK IN (ENTRY)
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-neutral-900 font-bold text-xs rounded transition text-left tracking-wide">
+                        📤 STOCK OUT
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-neutral-900 font-bold text-xs rounded transition text-left tracking-wide">
+                        🔄 STOCK TRANSFER
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-neutral-900 font-bold text-xs rounded transition text-left tracking-wide">
+                        🔍 SHELF LOCATION
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-neutral-900 font-bold text-xs rounded transition text-left tracking-wide">
+                        🤖 INVENTORY COUNT (AI)
+                    </button>
+                    <button class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-neutral-900 font-bold text-xs rounded transition text-left tracking-wide">
+                        ⚠️ LOW STOCK ALERTS
+                    </button>
+                </nav>
+            </div>
+                    
+            <div id="adminControlsContainer" style="display: none;" class="fixed top-6 right-6 z-50 max-w-sm w-full bg-neutral-950/95 border-2 border-red-500/40 shadow-[0_0_25px_rgba(239,68,68,0.15)] rounded-xl p-4 backdrop-blur-md transform transition-all duration-500 ease-out translate-y-[-20px] opacity-0">
+                <div class="flex items-start gap-3">
+                    <div class="p-2 bg-red-500/10 text-red-400 rounded-md shrink-0 border border-red-500/20 font-mono text-base">
+                        🛡️
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider font-mono">Access Authorized</h3>
+                        <p class="text-xs text-gray-200 font-mono mt-1 leading-relaxed">
+                            Welcome Super Admin! System Management Controls fully enabled.
+                        </p>
+                        <div class="w-full bg-neutral-900 h-[2px] mt-3 rounded-full overflow-hidden">
+                            <div class="bg-red-500 h-full w-full animate-[shrinkBar_3.5s_linear_forwards]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                @keyframes shrinkBar {
+                    from { width: 100%; }
+                    to { width: 0%; }
+                }
+            </style>
+            
+            <div class="p-4 border-t-2 border-neutral-900 bg-black/40">
+                <div class="flex items-center gap-3 mb-4 p-3 bg-neutral-950 rounded-lg border border-neutral-800">
+                    <div class="w-9 h-9 rounded bg-amber-400/10 border border-amber-400/30 flex items-center justify-center text-amber-400 font-bold text-sm" id="avatarBadge">
+                        A
+                    </div>
+                    <div class="overflow-hidden">
+                        <h4 id="profName" class="text-sm font-bold text-white truncate">Loading...</h4>
+                        <span id="profRole" class="text-[10px] font-bold text-amber-500 tracking-wider block uppercase font-mono">STAFF</span>
+                    </div>
+                </div>
+                <div class="text-xs text-gray-500 font-mono mb-3 px-1 leading-relaxed border-l border-neutral-800 pl-2">
+                    ID: <span id="profUserId" class="text-gray-300 font-bold">---</span><br>
+                    Mail: <span id="profEmail" class="text-gray-400 truncate block max-w-[180px]">---</span>
+                </div>
+                <button onclick="sessionToken=''; location.reload();" class="w-full text-center border-2 border-neutral-800 hover:bg-red-950/30 hover:border-red-500/40 text-gray-400 hover:text-red-400 py-2 rounded-lg text-xs transition font-bold tracking-wide uppercase">
+                    LOGOUT SECURELY 🔒
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 p-6 overflow-y-auto space-y-6">
+            
+            <header class="flex justify-between items-center pb-4 border-b-2 border-neutral-900">
+                <div>
+                    <h1 id="welcomeHeadingText" class="text-2xl font-black tracking-wide text-amber-400 uppercase">AMSONS – AI INVENTORY CONTROL CENTER</h1>
+                    <p class="text-xs text-gray-500 font-mono tracking-wider mt-1 font-semibold">STOCK CONTROL • SHELF LOCATION • STOCK MONITORING SYSTEM</p>
+                </div>
+                
+                <div class="flex gap-3 text-xs">
+                    <div class="bg-neutral-950 border border-neutral-800 px-4 py-2 rounded-lg flex items-center gap-2">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        <div>
+                            <span class="text-gray-500 block text-[9px] uppercase tracking-wider font-mono font-bold">System State</span>
+                            <span class="text-emerald-400 font-bold text-xs tracking-wide">AI ACTIVE</span>
+                        </div>
+                    </div>
+                    <div class="bg-neutral-950 border border-neutral-800 px-4 py-2 rounded-lg text-right flex flex-col justify-center">
+                        <span class="text-gray-500 block text-[9px] uppercase tracking-wider font-mono font-bold">Simulated Zone Time</span>
+                        <span id="liveClockDisplay" class="font-mono text-white font-bold tracking-wide text-xs">10:30 AM | 20 May 2025</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div class="bg-neutral-950 border border-neutral-800 p-4 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start border-b border-neutral-900 pb-2 mb-2">
+                        <span class="text-xs text-emerald-400 font-bold uppercase tracking-wider">🟢 STOREROOM 1</span>
+                        <span class="text-[10px] text-gray-500 font-semibold font-mono">Zone A - General</span>
+                    </div>
+                    <div class="grid grid-cols-3 text-center text-xs pt-1">
+                        <div><span class="text-white font-extrabold block text-base">1,248</span><span class="text-[10px] text-gray-500 uppercase font-bold">Total</span></div>
+                        <div><span class="text-amber-400 font-extrabold block text-base">187</span><span class="text-[10px] text-gray-500 uppercase font-bold">Low</span></div>
+                        <div><span class="text-red-500 font-extrabold block text-base">32</span><span class="text-[10px] text-gray-500 uppercase font-bold">Out</span></div>
+                    </div>
+                </div>
+                <div class="bg-neutral-950 border border-neutral-800 p-4 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start border-b border-neutral-900 pb-2 mb-2">
+                        <span class="text-xs text-blue-400 font-bold uppercase tracking-wider">🔵 STOREROOM 2</span>
+                        <span class="text-[10px] text-gray-500 font-semibold font-mono">Zone B - Electronics</span>
+                    </div>
+                    <div class="grid grid-cols-3 text-center text-xs pt-1">
+                        <div><span class="text-white font-extrabold block text-base">1,106</span><span class="text-[10px] text-gray-500 uppercase font-bold">Total</span></div>
+                        <div><span class="text-amber-400 font-extrabold block text-base">142</span><span class="text-[10px] text-gray-500 uppercase font-bold">Low</span></div>
+                        <div><span class="text-red-500 font-extrabold block text-base">28</span><span class="text-[10px] text-gray-500 uppercase font-bold">Out</span></div>
+                    </div>
+                </div>
+                <div class="bg-neutral-950 border border-neutral-800 p-4 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start border-b border-neutral-900 pb-2 mb-2">
+                        <span class="text-xs text-amber-500 font-bold uppercase tracking-wider">🟠 STOREROOM 3</span>
+                        <span class="text-[10px] text-gray-500 font-semibold font-mono">Zone C - Kitchen</span>
+                    </div>
+                    <div class="grid grid-cols-3 text-center text-xs pt-1">
+                        <div><span class="text-white font-extrabold block text-base">976</span><span class="text-[10px] text-gray-500 uppercase font-bold">Total</span></div>
+                        <div><span class="text-amber-400 font-extrabold block text-base">96</span><span class="text-[10px] text-gray-500 uppercase font-bold">Low</span></div>
+                        <div><span class="text-red-500 font-extrabold block text-base">19</span><span class="text-[10px] text-gray-500 uppercase font-bold">Out</span></div>
+                    </div>
+                </div>
+                <div class="bg-neutral-950 border border-neutral-800 p-4 rounded-xl shadow-sm">
+                    <div class="flex justify-between items-start border-b border-neutral-900 pb-2 mb-2">
+                        <span class="text-xs text-purple-400 font-bold uppercase tracking-wider">🟣 STOREROOM 4</span>
+                        <span class="text-[10px] text-gray-500 font-semibold font-mono">Zone D - Books</span>
+                    </div>
+                    <div class="grid grid-cols-3 text-center text-xs pt-1">
+                        <div><span class="text-white font-extrabold block text-base">754</span><span class="text-[10px] text-gray-500 uppercase font-bold">Total</span></div>
+                        <div><span class="text-amber-400 font-extrabold block text-base">71</span><span class="text-[10px] text-gray-500 uppercase font-bold">Low</span></div>
+                        <div><span class="text-red-500 font-extrabold block text-base">14</span><span class="text-[10px] text-gray-500 uppercase font-bold">Out</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="lg:col-span-2 bg-neutral-950 border border-neutral-800 p-5 rounded-xl space-y-4 shadow-sm">
+                    <div class="flex justify-between items-center border-b border-neutral-900 pb-2">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">STOREROOM MAP OVERVIEW</h3>
+                        <span class="text-xs text-gray-500 font-mono font-semibold">Total Racks Mapping Tracker: 12 Per Zone</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-3 bg-neutral-900/20 border border-emerald-500/20 rounded-lg">
+                            <span class="text-xs text-emerald-400 font-bold block mb-2 uppercase tracking-wide font-mono">STOREROOM 1 (Zone A)</span>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/40 text-white rounded-md cursor-pointer hover:bg-emerald-500 hover:text-black font-bold transition">A01</div>
+                                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/40 text-white rounded-md cursor-pointer hover:bg-emerald-500 hover:text-black font-bold transition">A02</div>
+                                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/40 text-white rounded-md cursor-pointer hover:bg-emerald-500 hover:text-black font-bold transition">A03</div>
+                                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/40 text-white rounded-md cursor-pointer hover:bg-emerald-500 hover:text-black font-bold transition">A04</div>
+                                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/40 text-white rounded-md cursor-pointer hover:bg-emerald-500 hover:text-black font-bold transition">A05</div>
+                                <div class="p-2.5 bg-emerald-500/10 border border-emerald-500/40 text-white rounded-md cursor-pointer hover:bg-emerald-500 hover:text-black font-bold transition">A06</div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-neutral-900/20 border border-blue-500/20 rounded-lg">
+                            <span class="text-xs text-blue-400 font-bold block mb-2 uppercase tracking-wide font-mono">STOREROOM 2 (Zone B)</span>
+                            <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                                <div class="p-2.5 bg-blue-500/10 border border-blue-500/40 text-white rounded-md cursor-pointer hover:bg-blue-500 hover:text-black font-bold transition">B01</div>
+                                <div class="p-2.5 bg-blue-500/10 border border-blue-500/40 text-white rounded-md cursor-pointer hover:bg-blue-500 hover:text-black font-bold transition">B02</div>
+                                <div class="p-2.5 bg-blue-500/10 border border-blue-500/40 text-white rounded-md cursor-pointer hover:bg-blue-500 hover:text-black font-bold transition">B03</div>
+                                <div class="p-2.5 bg-blue-500/10 border border-blue-500/40 text-white rounded-md cursor-pointer hover:bg-blue-500 hover:text-black font-bold transition">B04</div>
+                                <div class="p-2.5 bg-blue-500/10 border border-blue-500/40 text-white rounded-md cursor-pointer hover:bg-blue-500 hover:text-black font-bold transition">B05</div>
+                                <div class="p-2.5 bg-blue-500/10 border border-blue-500/40 text-white rounded-md cursor-pointer hover:bg-blue-500 hover:text-black font-bold transition">B06</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-neutral-950 border border-neutral-800 p-5 rounded-xl flex flex-col justify-between space-y-4 shadow-sm">
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">ITEM LOCATION SEARCH</h3>
+                        <div>
+                            <input type="text" placeholder="Search Product / SKU / Barcode..." class="w-full p-3 bg-black border border-neutral-800 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400 font-mono border-white/20">
+                        </div>
+                        
+                        <div class="p-4 bg-neutral-900/40 border border-neutral-800 rounded-lg space-y-3 text-sm">
+                            <span class="text-xs uppercase font-bold text-emerald-400 tracking-wider flex items-center gap-1">✨ ITEM FOUND MATCH</span>
+                            <div class="border-t border-neutral-900 pt-2 space-y-2 font-mono text-xs">
+                                <div class="flex justify-between"><span class="text-gray-500">Item:</span><span class="text-white font-bold">AA Battery (Pack of 4)</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">SKU:</span><span class="text-gray-300">BAT-AA-001</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Rack/Shelf:</span><span class="text-amber-400 font-bold">B03 / 04</span></div>
+                                <div class="flex justify-between"><span class="text-gray-500">Code:</span><span class="text-blue-400 font-bold underline">B03-04-02</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-neutral-900 space-y-2.5">
+                        <span class="text-xs text-gray-500 uppercase tracking-wider block font-bold font-mono">🔐 Reset Staff Password Node</span>
+                        <input type="password" id="profileNewPasswordInput" placeholder="New Secret Password Key" class="w-full p-2.5 bg-black border border-neutral-800 rounded-lg text-sm text-white focus:outline-none focus:border-amber-400 border-white/20">
+                        <button type="button" onclick="executeProfilePasswordChangePipeline()" class="w-full bg-amber-400/10 border-2 border-amber-400/40 hover:bg-amber-400 hover:text-black text-amber-400 font-bold py-2.5 rounded-lg text-xs transition uppercase tracking-wider font-mono">
+                            Update Registry Key
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="bg-neutral-950 border border-neutral-800 p-5 rounded-xl space-y-3 shadow-sm">
+                    <h3 class="text-sm font-bold text-red-500 uppercase tracking-wider flex items-center gap-1">⚠️ LOW STOCK MONITORING LOGS</h3>
+                    <div class="divide-y divide-neutral-900 max-h-44 overflow-y-auto space-y-1 pr-1 text-xs font-mono">
+                        <div class="flex justify-between py-2.5 border-b border-neutral-900/60"><span class="text-gray-300 font-medium">🚨 AA Battery (Pack of 4)</span><span class="text-red-400 font-bold">Qty Left: 2 Packs</span></div>
+                        <div class="flex justify-between py-2.5 border-b border-neutral-900/60"><span class="text-gray-300 font-medium">🚨 HDMI Cable Core 3M</span><span class="text-red-400 font-bold">Qty Left: 6 Pcs</span></div>
+                        <div class="flex justify-between py-2.5 border-b border-neutral-900/60"><span class="text-gray-300 font-medium">🚨 Printer Paper A4 Bundle</span><span class="text-amber-400 font-bold">Qty Left: 3 Reams</span></div>
+                    </div>
+                </div>
+
+                <div class="bg-neutral-950 border border-neutral-800 p-5 rounded-xl space-y-3 flex flex-col justify-between shadow-sm">
+                    <div class="space-y-2 w-full">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">📦 DATABASE INVENTORY ENGINE TABLE</h3>
+                        <div class="overflow-x-auto max-h-40">
+                            <table class="w-full text-left text-xs font-mono border-collapse">
+                                <thead>
+                                    <tr class="border-b-2 border-neutral-900 text-gray-500 text-[11px] uppercase font-bold">
+                                        <th class="pb-2.5">Product Name</th>
+                                        <th class="pb-2.5">Barcode</th>
+                                        <th class="pb-2.5 text-right">Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTableBody" class="divide-y divide-neutral-900/80 text-gray-300">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 xl:grid-cols-3 gap-6 pt-2">
+                
+                <div class="xl:col-span-2 bg-neutral-950 border border-neutral-800 p-5 rounded-xl space-y-4 shadow-sm">
+                    <div class="flex justify-between items-center border-b border-neutral-900 pb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono">📥 CORE INTELLIGENT STOCK IN STATION</span>
+                            <span id="camProcessModeBadgeStandalone" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-md font-bold uppercase tracking-wider font-mono animate-pulse">VISION STANDBY</span>
+                        </div>
+                        <span class="text-xs text-gray-500 font-mono font-semibold">Camera OCR + Barcode Engine Sync</span>
+                    </div>
+
+                    <div class="relative w-full h-[390px] bg-black rounded-xl border-2 border-neutral-800 overflow-hidden flex flex-col">
+                        <div class="absolute top-0 inset-x-0 bg-neutral-950/80 backdrop-blur border-b border-neutral-900 px-4 py-2.5 flex justify-between items-center z-30">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                <span class="text-xs text-gray-400 font-mono tracking-wider uppercase font-bold">AI Live Scanner Mode</span>
+                            </div>
+                            <span id="camCognitionBadge" class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-md font-bold font-mono">MULTI-MODAL COGNITION ON</span>
+                        </div>
+
+                        <div class="relative w-full flex-1 bg-neutral-950 flex items-center justify-center overflow-hidden">
+                            <video id="aiRealtimeVideoNode" autoplay playsinline muted class="w-full h-full object-cover"></video>
+                            <canvas id="aiVisionOverlayCanvas" class="absolute inset-0 w-full h-full z-10 pointer-events-none"></canvas>
+                            
+                            <div id="visionScanBarLine" class="absolute inset-x-0 top-0 h-0.5 bg-cyan-400 opacity-75 shadow-[0_0_15px_#22d3ee] animate-[bounce_2.5s_infinite] z-20"></div>
+                        </div>
+
+                        <div class="bg-neutral-900/90 border-t border-neutral-800 p-3 font-mono text-xs grid grid-cols-2 gap-2 z-30">
+                            <div class="text-gray-400 font-medium">Target Object: <span id="hudDetectedObj" class="text-emerald-400 font-bold text-sm">Waiting...</span></div>
+                            <div class="text-gray-400 text-right font-medium">Confidence: <span id="hudConfidence" class="text-cyan-400 font-bold text-sm">0%</span></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="button" onclick="bootStockInVisualScannerPipeline()" class="bg-blue-950/40 hover:bg-blue-900 border-2 border-blue-800/60 text-blue-400 text-xs py-3 rounded-lg font-mono font-bold uppercase tracking-widest transition shadow-sm">
+                            📷 START CAM AI SCAN
+                        </button>
+                        <button type="button" onclick="killStockInVisualScannerPipeline()" class="bg-neutral-900 hover:bg-neutral-800 border-2 border-neutral-800 text-gray-400 text-xs py-3 rounded-lg font-mono font-bold uppercase tracking-widest transition shadow-sm">
+                            🛑 HALT STREAM ENGINE
+                        </button>
+                    </div>
+
+                    <div id="aiNewProductFormDrawer" class="hidden p-4 border-2 border-dashed border-amber-400/40 bg-neutral-900/20 rounded-xl space-y-4 animate-fadeIn">
+                        <div class="flex justify-between items-center border-b border-neutral-900 pb-2">
+                            <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider font-mono flex items-center gap-1">✨ AI VISION ATTRIBUTES IDENTIFIED (FIRST TIME ENCOUNTER)</h4>
+                            <span class="text-[10px] bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded border border-amber-400/20 font-mono font-bold uppercase">Form Auto Filled</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Detected Barcode</label>
+                                <input type="text" id="aiFieldBarcode" readonly class="w-full p-2.5 bg-black border border-neutral-800 text-amber-400 rounded-lg font-mono font-bold focus:outline-none">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Product Identified Title Name</label>
+                                <input type="text" id="aiFieldName" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-amber-400 border-white/10">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Parsed Size</label>
+                                <input type="text" id="aiFieldSize" placeholder="e.g., Medium" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-amber-400 border-white/10">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Extracted Weight</label>
+                                <input type="text" id="aiFieldWeight" placeholder="e.g., 500g" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg font-mono focus:outline-none focus:border-amber-400 border-white/10">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Target Storage</label>
+                                <select id="aiFieldStoreroomSelector" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-amber-400 border-white/10">
+                                    <option value="">-- Choose Storeroom --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Assign Rack</label>
+                                <input type="text" id="aiFieldShelf" placeholder="Shelf-A | Row 3" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-amber-400 border-white/10">
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-1">
+                            <button type="button" onclick="executeFirstTimeProductCommitPipeline()" class="bg-emerald-500 hover:bg-emerald-600 text-black font-bold font-mono text-xs px-5 py-2.5 rounded-lg uppercase tracking-wider transition shadow-md">
+                                💾 Commit Record to Database Registry
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="aiRepeatProductFormDrawer" class="hidden p-4 border-2 border-dashed border-emerald-500/40 bg-neutral-900/20 rounded-xl space-y-3 animate-fadeIn">
+                        <div class="flex justify-between items-center border-b border-neutral-900 pb-2">
+                            <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-1">🔄 REPEAT SCAN MATCH DETECTED</h4>
+                            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20 font-mono font-bold uppercase">Stock Count Up +1</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 bg-black/50 border border-neutral-800 rounded-lg gap-3">
+                            <div class="font-mono text-xs leading-relaxed">
+                                <span class="text-gray-500 font-bold">Identified Item:</span> <span id="repeatMatchLabelName" class="text-white font-extrabold">---</span><br>
+                                <span class="text-gray-500 font-bold">Active Storage Unit:</span> <span id="repeatMatchLabelZone" class="text-amber-400 font-bold">---</span> • <span id="repeatMatchLabelShelf" class="text-gray-300">---</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-400 font-mono uppercase font-bold">Append Bulk?</span>
+                                <input type="number" id="repeatExtraQuantityInput" value="0" min="0" class="w-20 p-2 bg-neutral-900 border border-neutral-800 text-white text-center rounded-lg font-mono font-bold focus:outline-none focus:border-emerald-400">
+                                <button type="button" onclick="executeRepeatQuantityCommitPipeline()" class="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs px-4 py-2 rounded-lg uppercase tracking-wider font-mono transition">
+                                    Save
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-neutral-950 border border-neutral-800 p-5 rounded-xl flex flex-col justify-between space-y-4 shadow-sm">
+                    
+                    <div class="space-y-3 border-b border-neutral-900 pb-4">
+                        <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider font-mono">🏛️ INFINITE ROOM INITIALIZER</h3>
+                        <p class="text-xs text-gray-500 font-mono leading-relaxed font-medium">Establish a clean, independent sub-database inventory sector partition zone instantly without restriction scripts.</p>
+                        
+                        <form id="manualRoomCreateForm" onsubmit="handleManualStoreroomCreationPipeline(event)" class="space-y-3 text-sm">
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Storage Name Designation</label>
+                                <input type="text" id="manRoomNameInput" required placeholder="e.g., Store Room 5 (Basement)" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-amber-400 border-white/10">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 font-mono uppercase mb-1 font-bold">Sector Meta Description</label>
+                                <input type="text" id="manRoomDescInput" placeholder="e.g., Premium Fragrance / Bulk Items" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-amber-400 border-white/10">
+                            </div>
+                            <button type="submit" class="w-full bg-amber-400/10 border-2 border-amber-400/40 hover:bg-amber-400 hover:text-black text-amber-400 font-bold font-mono py-2.5 rounded-lg text-xs transition uppercase tracking-wider">
+                                Activate Storage Partition Unit
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="space-y-3 pt-1">
+                        <h3 class="text-sm font-bold text-purple-400 uppercase tracking-wider font-mono">⚙️ MANUAL STOCK CONTROL OVERRIDE</h3>
+                        <p class="text-xs text-gray-500 font-mono leading-relaxed font-medium">Direct pipeline fallback database modification bypass channel without barcode camera dependency scanners.</p>
+                        
+                        <div class="space-y-2.5 text-sm font-mono">
+                            <div>
+                                <label class="block text-xs text-gray-500 uppercase mb-1 font-bold">Input Product Barcode Tag Key</label>
+                                <input type="text" id="manOverrideBarcode" placeholder="Enter Barcode Serial..." class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg focus:outline-none focus:border-purple-400 border-white/10">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-xs text-gray-500 uppercase mb-1 font-bold">Adjust Qty</label>
+                                    <input type="number" id="manOverrideQty" value="1" min="1" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg font-bold focus:outline-none focus:border-purple-400 border-white/10">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 uppercase mb-1 font-bold">Pipeline Vector</label>
+                                    <select id="manOverrideType" class="w-full p-2.5 bg-black border border-neutral-800 text-white rounded-lg font-bold focus:outline-none focus:border-purple-400 border-white/10">
+                                        <option value="IN" class="bg-black text-emerald-400 font-bold">📥 STOCK IN</option>
+                                        <option value="OUT" class="bg-black text-red-400 font-bold">📤 STOCK OUT</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button type="button" onclick="executeManualBackdoorOverridePipeline()" class="w-full bg-purple-500/10 border-2 border-purple-500/40 hover:bg-purple-500 hover:text-white text-purple-400 font-bold py-2.5 rounded-lg text-xs transition uppercase tracking-wider">
+                                Push Direct Pipeline Overwrite
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+    
+
+<script>
+    
+    function toggleAuthMode(showRegister) {
+        const loginBox = document.getElementById("loginFormContainer");
+        const registerBox = document.getElementById("registerFormContainer");
+        document.getElementById("authMessage").classList.add("hidden");
+        
+        if (typeof terminateWebcam === "function") terminateWebcam();
+
+        if (showRegister) {
+            loginBox.classList.add("hidden");
+            registerBox.classList.remove("hidden");
+        } else {
+            registerBox.classList.add("hidden");
+            loginBox.classList.remove("hidden");
+        }
+    }
+
+    // Shared screen logging function for alerts
+    function displayNotification(textMessage, isSuccess = false) {
+        const displayDiv = document.getElementById("authMessage");
+        if (!displayDiv) return;
+        displayDiv.innerText = textMessage;
+        displayDiv.className = isSuccess 
+            ? "bg-emerald-500/20 text-emerald-400 p-4 rounded-lg mb-4 text-base border-2 border-emerald-500/40 text-center font-bold"
+            : "bg-red-500/20 text-red-400 p-4 rounded-lg mb-4 text-base border-2 border-red-500/40 text-center font-bold";
+        displayDiv.classList.remove("hidden");
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        const authSection = document.getElementById("authSection");
+        if (authSection && !authSection.classList.contains("hidden")) {
+            if (typeof bootAutoFaceAuthentication === "function") {
+                bootAutoFaceAuthentication();
+            }
+        }
+    });
+</script>
+
+    <script src="login.js"></script>
+    <script src="register.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+
+</html>
