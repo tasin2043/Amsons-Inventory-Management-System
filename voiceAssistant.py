@@ -39,10 +39,9 @@ def check_product_location(product_name_query):
             found_product = prod
             break
             
-    if found_product and found_product.location:
-        loc = found_product.location
-        # 💡 prod.stock_quantity check kora holo
-        reply = f"Yes Tasin, {found_product.name} is located in {loc.zone}, {loc.aisle}, {loc.shelf_number}. Current stock is {found_product.stock_quantity}."
+    # ─── এখানে স্পেস বা ইনডেন্টেশন ঠিক করা হলো ───
+    if found_product:
+        reply = f"Yes Tasin, {found_product.name} is located on {found_product.shelf_name}, Row {found_product.row_number}. Current stock is {found_product.stock_quantity}."
         speak(reply)
     else:
         speak("I am sorry, I could not find that product in the warehouse database.")
