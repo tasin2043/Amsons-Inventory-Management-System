@@ -1,21 +1,80 @@
 let registerWebcamInstance = null;
-let currentAllocatedStaffId = ""; // Generated Staff ID store korar variable
+let currentAllocatedStaffId = ""; 
 
-// Camera trigger for registration
+// 🧠 1. ROLE BLOCKING FIREWALL PATTERNS INTEGRATION PIPELINE
+if (document.getElementById("registerRole")) {
+    document.getElementById("registerRole").addEventListener("change", (event) => {
+        const selectedRole = event.target.value;
+
+        if (selectedRole === "admin") {
+            alert("🛡️ SYSTEM NOTICE: Accessing Restricted System Administration Role Node.");
+            const authCodeInput = prompt("🔑 Enter Secure Administrative Verification Override Key:");
+            
+            if (authCodeInput === "0693") {
+                displayNotification("✅ Admin authorization verified. Access granted to select role schema.", true);
+            } else {
+                alert("❌ INVALID SECURITY KEY! Access to Administrator clearance level has been rejected.");
+                event.target.value = "staff"; // Downgrade mapping fallback structure reset
+                displayNotification("⚠️ Security warning logs saved: Unauthorized admin upgrade attempt detected.", false);
+            }
+        } else if (selectedRole === "management") {
+            alert("💼 MANAGEMENT NOTICE: Accessing High-Level System Corporate Clearance Nodes.");
+            const authCodeInput = prompt("🔑 Enter Secure Management Verification Override Key:");
+            
+            if (authCodeInput === "9360") {
+                displayNotification("✅ Management credentials matched. Access granted to structural role config.", true);
+            } else {
+                alert("❌ INVALID SECURITY KEY! Management privileges upgrade pipeline execution terminated.");
+                event.target.value = "staff"; // Reset to standard fallback
+                displayNotification("⚠️ System context warning logs saved: Verification mismatch on role change operation.", false);
+            }
+        }
+    });
+}
+
+// 📸 2. SMART MODAL POPUP GATEWAY CONTROLLER ENGINE HANDLERS
+function openCameraModalUI() {
+    const modalFrame = document.getElementById("cameraPopupModal");
+    if(modalFrame) {
+        modalFrame.classList.remove("hidden");
+        initializeWebcam(); 
+    }
+}
+
+// Fixed camera UI modal termination triggers
+function closeCameraModalUI() {
+    const modalFrame = document.getElementById("cameraPopupModal");
+    if(modalFrame) {
+        modalFrame.classList.add("hidden");
+        terminateWebcam();
+    }
+}
+
+// Camera initialization routing parameters (Synced square capture limits)
 async function initializeWebcam() {
     const videoElement = document.getElementById("webcamStream");
-    const startBtn = document.getElementById("startCamBtn");
+    const canvasElement = document.getElementById("photoCanvas");
     const snapBtn = document.getElementById("captureSnapBtn");
 
     try {
-        registerWebcamInstance = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        if(canvasElement) canvasElement.classList.add("hidden");
+        if(videoElement) videoElement.classList.remove("hidden");
+
+        registerWebcamInstance = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "user", width: 480, height: 480 }, 
+            audio: false 
+        });
         videoElement.srcObject = registerWebcamInstance;
         
-        videoElement.classList.remove("hidden");
-        startBtn.classList.add("hidden");
-        snapBtn.classList.remove("hidden");
+        if(snapBtn) {
+            snapBtn.classList.remove("hidden");
+            snapBtn.innerText = "📸 CAPTURE MATRIX SNAPSHOT";
+            snapBtn.disabled = false;
+        }
     } catch (error) {
+        console.error("Camera interface deployment error tracker log:", error);
         displayNotification("Camera connection blocked. Please grant browser physical layer permissions.", false);
+        closeCameraModalUI();
     }
 }
 
@@ -24,26 +83,37 @@ function captureSnapshot() {
     const canvasElement = document.getElementById("photoCanvas");
     const hiddenInput = document.getElementById("capturedPhotoData");
     const snapBtn = document.getElementById("captureSnapBtn");
+    const statusLabel = document.getElementById("faceStatus");
+
+    if(!videoElement || !canvasElement) return;
 
     const context = canvasElement.getContext("2d");
-    canvasElement.width = videoElement.videoWidth;
-    canvasElement.height = videoElement.videoHeight;
+    canvasElement.width = videoElement.videoWidth || 480;
+    canvasElement.height = videoElement.videoHeight || 480;
     
-    // Draw and capture the static matrix frame layer
     context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
     
-    const base64Data = canvasElement.toDataURL("image/jpeg");
-    hiddenInput.value = base64Data; // Bind base64 payload data metrics
+    const base64Data = canvasElement.toDataURL("image/jpeg", 0.90);
+    if(hiddenInput) hiddenInput.value = base64Data; 
 
-    // Toggle viewport screens
     videoElement.classList.add("hidden");
     canvasElement.classList.remove("hidden");
-    snapBtn.innerText = "📸 Snapshot Captured Successfully!";
-    snapBtn.disabled = true;
     
-    if (registerWebcamInstance) {
-        registerWebcamInstance.getTracks().forEach(track => track.stop());
+    if(statusLabel) {
+        statusLabel.innerText = "📸 Snapshot Template Locked in Framework State!";
+        statusLabel.className = "mt-2 text-emerald-400 text-xs font-bold uppercase tracking-widest animate-pulse";
     }
+    
+    if(snapBtn) {
+        snapBtn.innerText = "✓ TEMPLATE STORED!";
+        snapBtn.disabled = true;
+    }
+    
+    terminateWebcam();
+    
+    setTimeout(() => {
+        closeCameraModalUI();
+    }, 1200);
 }
 
 function terminateWebcam() {
@@ -53,11 +123,10 @@ function terminateWebcam() {
     }
 }
 
-// 📌 PASSWORD VALIDATED SUBMIT HANDLER: Direct payload mapping with main.py endpoints
+// 📌 SUBMIT PIPELINE ENGINE HANDLER WITH FASTAPI ROUTING ARCHITECTURE
 document.getElementById("registerForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    // Mapping fields matching perfectly with updated index.html specifications IDs
     const allocatedStaffId = document.getElementById("liveAllocatedIdDisplay").innerText;
     const staffRealName = document.getElementById("regName").value.trim();
     const staffEmailAddress = document.getElementById("regEmail").value.trim();
@@ -65,26 +134,26 @@ document.getElementById("registerForm").addEventListener("submit", async (event)
     const accountRolePermission = document.getElementById("registerRole").value;
     const base64FaceSnapshot = document.getElementById("capturedPhotoData").value;
 
-    // Secure Strong Password validation verification schema rules metrics regex
-    const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
+    const exactFourDigitPinRegex = /^\d{4}$/;
     
-    if (!strongPasswordRegex.test(rawInputPassword)) {
-        displayNotification("Password matrix rule mismatch! Ensure capitalization, digits, symbols criteria are filled.", false);
+    if (!exactFourDigitPinRegex.test(rawInputPassword)) {
+        displayNotification("❌ Security rule mismatch! PIN must be exactly 4 numeric digits.", false);
+        return;
+    }
+
+    if (!base64FaceSnapshot) {
+        displayNotification("❌ Face verification identity trace missing! Run camera pipeline capture first.", false);
         return;
     }
 
     try {
-        // Build the correct standard multi-part payload structure to match FastAPI Form(...) parameters
         const registrationPayloadData = new FormData();
         registrationPayloadData.append("staff_id", allocatedStaffId);
         registrationPayloadData.append("name", staffRealName);
         registrationPayloadData.append("email", staffEmailAddress);
         registrationPayloadData.append("password", rawInputPassword);
         registrationPayloadData.append("role", accountRolePermission);
-        
-        if (base64FaceSnapshot) {
-            registrationPayloadData.append("facePhoto", base64FaceSnapshot);
-        }
+        registrationPayloadData.append("facePhoto", base64FaceSnapshot);
 
         displayNotification("Encrypting and saving user profile configuration pipeline to database...", true);
 
@@ -98,89 +167,64 @@ document.getElementById("registerForm").addEventListener("submit", async (event)
         if (networkResponse.ok) {
             displayNotification(`Registration Successful! Identity bound to ID: ${allocatedStaffId}. Please log in now.`, true);
             
-            // Clear out form text boxes layout attributes parameters values
             document.getElementById("registerForm").reset();
-            document.getElementById("capturedPhotoData").value = "";
-            document.getElementById("photoCanvas").classList.add("hidden");
-            document.getElementById("webcamStream").classList.add("hidden");
-            document.getElementById("startCamBtn").classList.remove("hidden");
-            document.getElementById("captureSnapBtn").innerText = "Take Snapshot";
-            document.getElementById("captureSnapBtn").disabled = false;
+            if(document.getElementById("capturedPhotoData")) document.getElementById("capturedPhotoData").value = "";
+            
+            const faceLabel = document.getElementById("faceStatus");
+            if(faceLabel) {
+                faceLabel.innerText = "Face Scan Required";
+                faceLabel.className = "mt-2 text-gray-400 text-xs font-mono";
+            }
 
-            // Automatically switch view panel layer back to login block layout parameters context
+            // 🚀 FIXED: Auto routing container mapping fallback loop initialization
             setTimeout(() => {
-                toggleAuthMode(false);
-            }, 3000);
+                if (typeof toggleAuthMode === "function") {
+                    toggleAuthMode(false); 
+                } else {
+                    const registerView = document.getElementById("registerFormContainer");
+                    const landingView = document.getElementById("authLandingView");
+                    if (registerView) registerView.classList.add("hidden");
+                    if (landingView) landingView.classList.remove("hidden");
+                }
+            }, 2500);
         } else {
-            displayNotification(logDataResult.detail || "Registration processing firewall rejected the connection request.");
+            displayNotification(logDataResult.detail || "Registration processing firewall rejected the connection request.", false);
         }
     } catch (apiErrorTracer) {
         console.error("Staff registration system exception tracking breakdown:", apiErrorTracer);
-        displayNotification("Failed to contact centralized database access authentication mapping servers.");
+        displayNotification("Failed to contact centralized database access authentication mapping servers.", false);
     }
 });
 
-// 🔄 1. Load Next ID & Trigger Voice Guidance Automatically
+// ─── INITIALIZATION PIPELINE FOR SEQUENTIAL IDS ───
 async function initializeRegistrationFormUI() {
     try {
         const response = await fetch(`${apiUrl}/api/next-staff-id`);
         const data = await response.json();
         
         if (response.ok && data.status === "success") {
-            // Live numeric code display setup across layout tags
             document.getElementById("liveAllocatedIdDisplay").innerText = data.next_id;
-        } else {
-            console.error("Failed to allocate next matrix sequence id block.");
+            announceVoiceGuidance(); 
         }
     } catch (err) {
         console.error("System staff tracking directories network connectivity issue:", err);
     }
 }
 
-// 🗣️ 2. Slow and Clear English Instruction Voice Function
-function announceVoiceGuidance() {
-    if ('speechSynthesis' in window) {
-        const instructionText = "Please note down the User I D displayed above. You will need this I D along with your password to login to the system.";
-        
-        const voiceUtterance = new SpeechSynthesisUtterance(instructionText);
-        voiceUtterance.lang = 'en-US';   // Standard US Accent
-        voiceUtterance.rate = 0.85;      // Made it slow (1.0 is standard speed)
-        voiceUtterance.pitch = 1.0;     
-        
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(voiceUtterance);
-    }
-}
-
-// 🚀 3. Form Open/Click event hook link handler
-// Note: index.html block layout configuration functions trigger direct tracking link hook
 if (document.getElementById("goToRegisterBtn")) {
     document.getElementById("goToRegisterBtn").addEventListener("click", () => {
-        // Dynamic swap viewports layer system
         initializeRegistrationFormUI(); 
     });
 }
 
-// 📌 4. DYNAMIC ROLE SELECTION LISTENER: Popup prompt block alert inside registration setup
-if (document.getElementById("registerRole")) {
-    document.getElementById("registerRole").addEventListener("change", (event) => {
-        const selectedRole = event.target.value;
-
-        if (selectedRole === "admin") {
-            // Display alert notification system context interface trigger
-            alert(
-                "🛡️ SYSTEM NOTICE: System Control will authorize your access.\n\n" +
-                "⚠️ ATTENTION:\nIf you are a standard Staff member, please do not attempt to gain access to the Admin Panel. Unauthorized access logs are fully audited."
-            );
-            
-            // Custom shared notification strip block configuration inside index.html for extra clean alert look
-            displayNotification(
-                "🛡️ Admin security verification pending approval. If you are Staff, do not proceed with Admin elevation rules.", 
-                false
-            );
-        } else {
-            // Optional: If user switches back to staff, clean previous warning notices logs
-            document.getElementById("authMessage").classList.add("hidden");
-        }
-    });
+function announceVoiceGuidance() {
+    if ('speechSynthesis' in window) {
+        const instructionText = "Please note down the User I D displayed above. You will need this I D along with your password to login to the system.";
+        const voiceUtterance = new SpeechSynthesisUtterance(instructionText);
+        voiceUtterance.lang = 'en-US';   
+        voiceUtterance.rate = 0.85;      
+        voiceUtterance.pitch = 1.0;     
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(voiceUtterance);
+    }
 }
