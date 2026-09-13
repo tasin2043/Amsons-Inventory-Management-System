@@ -1,0 +1,4407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amsons POS System</title>
+<style>
+    :root {
+        --navy-dark:#061527;
+        --navy:#082245;
+        --navy-mid:#0f3364;
+        --navy-light:#0f3f78;
+        --gold:#e6b93c;
+        --gold-dark:#c99a2e;
+        --gold-light:#f2cd6c;
+        --red:#e0483a;
+        --red-dark:#a52a1f;
+        --bg:#e9ecf1;
+        --white:#fff;
+        --text-dark:#12233f;
+        --green:#2f9e4f;
+        --green-light:#45c169;
+        --green-dark:#1c6b34;
+        --blue:#2f6fce;
+        --blue-light:#6fa3e8;
+        --blue-dark:#1f4f9e;
+        --orange:#e8823a;
+        --orange-dark:#a34b0f;
+
+        /* Variables used only by the Till Login screen */
+        --bg-black:#0b0b0d;
+        --panel:#141416;
+        --panel-light:#101113;
+        --border-gold: rgba(230,185,60,0.45);
+        --text-muted:#9a9a9e;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        user-select: none;
+    }
+
+    html, body {
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    body {
+        background-color: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    svg { display: block; }
+
+    .pos-container {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--bg);
+    }
+
+    /* ===== Top Bar ===== */
+    .topbar {
+        flex: 0 0 auto;
+        position: relative;
+        background-color: #000;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        padding: 0.8vh 1vw;
+        gap: 1vw;
+    }
+
+    /* Till-open border light: a one-shot gold light that traces the dashboard's border */
+    .till-open-light-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 500;
+        opacity: 1;
+        transition: opacity 0.4s ease-out;
+    }
+
+    .till-open-light-svg.fade-out {
+        opacity: 0;
+    }
+
+    .till-open-light-path {
+        fill: none;
+        stroke: #c98f00;
+        stroke-linecap: round;
+        filter:
+            drop-shadow(0 0 2px rgba(0,0,0,0.55))
+            drop-shadow(0 0 8px var(--gold))
+            drop-shadow(0 0 18px var(--gold-light))
+            drop-shadow(0 0 28px var(--gold-light));
+    }
+
+    .topbar-left {
+        display: flex;
+        align-items: center;
+        gap: 0.9vw;
+        flex: 0 0 auto;
+    }
+
+    .till-block, .admin-block {
+        display: flex;
+        align-items: center;
+        gap: 0.5vw;
+    }
+
+    .topbar .icon-gold {
+        color: var(--gold);
+        width: clamp(22px, 2vw, 30px);
+        height: clamp(22px, 2vw, 30px);
+        flex: 0 0 auto;
+    }
+
+    .till-num {
+        font-size: clamp(15px, 1.35vw, 20px);
+        font-weight: bold;
+        color: #fff;
+        letter-spacing: 0.5px;
+    }
+
+    .till-underline {
+        height: 2px;
+        background: var(--gold);
+        margin-top: 3px;
+        width: 70%;
+    }
+
+    .admin-label {
+        font-size: clamp(12px, 1vw, 15px);
+        color: var(--gold);
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+
+    .admin-name {
+        font-size: clamp(15px, 1.4vw, 21px);
+        color: #fff;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .divider {
+        width: 1px;
+        align-self: stretch;
+        background: rgba(255,255,255,0.25);
+    }
+
+    .topbar-center {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6vw;
+    }
+
+    .mosque-icon {
+        width: clamp(32px, 3.2vw, 48px);
+        height: clamp(32px, 3.2vw, 48px);
+        color: var(--gold);
+        flex: 0 0 auto;
+    }
+
+    .logo-crop {
+        --logo-h: clamp(40px, 4.4vw, 64px);
+        height: var(--logo-h);
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .amsons-logo {
+        height: calc(var(--logo-h) * 2.276);
+        width: auto;
+        display: block;
+        margin-top: calc(var(--logo-h) * -0.289);
+    }
+
+    .alumrock-box {
+        border: 1.5px solid var(--gold);
+        border-radius: 4px;
+        color: #fff;
+        font-weight: bold;
+        font-size: clamp(14px, 1.5vw, 22px);
+        letter-spacing: 1px;
+        padding: 0.3vh 0.7vw;
+        background: rgba(255,255,255,0.06);
+        white-space: nowrap;
+    }
+
+    .topbar-right {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 0.9vw;
+    }
+
+    .mode-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3vh;
+    }
+
+    .mode-badge {
+        background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
+        color: var(--text-dark);
+        font-weight: bold;
+        font-size: clamp(9px, 0.75vw, 11px);
+        padding: 0.2vh 0.6vw;
+        border: 1.5px solid #8a6a1c;
+        border-radius: 3px;
+        letter-spacing: 0.5px;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 3px 0 rgba(0,0,0,0.2), 0 5px 6px rgba(0,0,0,0.3);
+    }
+
+    .mode-label {
+        font-size: clamp(8px, 0.65vw, 10px);
+        color: #ccc;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== Main Body ===== */
+    .main-body {
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+        padding: 1.1vw;
+        gap: 0.8vw;
+    }
+
+    .left-area {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8vh;
+    }
+
+    .invoice-search {
+        flex: 0 0 auto;
+        border: 1px solid #b8bec8;
+        background: #fff;
+        padding: 0.5vh 1vw;
+        font-size: clamp(14px, 1.2vw, 18px);
+        color: #333;
+        border-radius: 10px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 0 1px rgba(20,30,50,0.3), 0 6px 14px rgba(20,30,50,0.22);
+    }
+
+    .invoice-search::placeholder {
+        color: #333;
+    }
+
+    /* Data Input / Price / Total Qty / Total Items: a compact full-width bar */
+    .cards-grid {
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: 1.7fr 1.3fr 1fr 1fr;
+        gap: 0.6vw;
+    }
+
+    .info-card {
+        border: 1px solid #b8bec8;
+        background: #fff;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 0 1px rgba(20,30,50,0.3), 0 6px 14px rgba(20,30,50,0.22);
+    }
+
+    .card-label {
+        background: linear-gradient(to bottom, var(--navy-light), var(--navy));
+        color: #fff;
+        font-size: clamp(12px, 1vw, 15px);
+        font-weight: bold;
+        padding: 0.35vh 0;
+        letter-spacing: 0.5px;
+    }
+
+    .card-value {
+        font-size: clamp(18px, 1.8vw, 26px);
+        font-weight: bold;
+        color: var(--text-dark);
+        padding: 1vh 0;
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .info-card.err-flash {
+        animation: shake 0.35s;
+    }
+
+    .info-card.err-flash .card-value {
+        color: var(--red);
+    }
+
+    /* Hidden but focusable input: keypad and USB scanner both write into it */
+    .scan-capture {
+        position: fixed;
+        top: -100px;
+        left: -100px;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        border: none;
+        outline: none;
+        padding: 0;
+    }
+
+    /* Top-of-screen banner for checkout/scan feedback - same white/gold
+       chrome as the SETTINGS popup, with a colored border+text accent for
+       ok/error so the message still reads correctly at a glance. */
+    .till-toast {
+        position: absolute;
+        top: 1.2vh;
+        left: 50%;
+        transform: translateX(-50%) translateY(-140%);
+        z-index: 600;
+        padding: 1.1vh 1.6vw;
+        border-radius: 10px;
+        font-size: clamp(14px, 1.15vw, 18px);
+        font-weight: bold;
+        color: var(--text-dark);
+        background: #fdfcf8;
+        border: 2px solid var(--gold);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+        transition: transform 0.25s ease-out;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+
+    .till-toast.show {
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .till-toast.ok {
+        border-color: var(--green);
+        color: var(--green-dark);
+    }
+
+    .till-toast.error {
+        border-color: var(--red);
+        color: var(--red-dark);
+    }
+
+    /* PROMOTION panel: takes over the QUICK PRODUCTS AND CATEGORIES block
+       (bottom-left) whenever the cart holds an item with an active Promotion,
+       and reverts back to the normal quick-picks view once it doesn't. Both
+       views live inside .categories-block and share its flex column layout. */
+    .quick-picks-view,
+    .promo-panel-view {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5vh;
+    }
+
+    /* BEST SALE PRODUCTS (title+grid) and CATEGORIES (title+grid) each get an
+       exact equal half of categories-block's real height - no guessed fixed
+       sizes, so cards can never be cut off (too big for the space) or leave a
+       dead gap (too small for it) the way a fixed vh guess could */
+    .quick-picks-group {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3vh;
+    }
+
+    .quick-picks-view[hidden],
+    .promo-panel-view[hidden] {
+        display: none;
+    }
+
+    .promo-panel-title {
+        color: var(--green-light) !important;
+    }
+
+    .promo-panel-list {
+        flex: 1 1 0;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6vh;
+    }
+
+    .promo-item-row {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8vw;
+        padding: 1vh 1vw;
+        border-radius: 8px;
+        background: #ffffff;
+        border: 1.5px solid #000000;
+    }
+
+    .promo-item-name {
+        color: #000000;
+        font-size: clamp(13px, 1.05vw, 16px);
+        font-weight: bold;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .promo-item-tag {
+        color: #000000;
+        font-size: clamp(10px, 0.85vw, 13px);
+        opacity: 0.75;
+        margin-top: 0.2vh;
+    }
+
+    .promo-item-prices {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: baseline;
+        gap: 0.6vw;
+        white-space: nowrap;
+    }
+
+    .promo-item-qty {
+        color: #000000;
+        font-size: clamp(12px, 0.95vw, 15px);
+    }
+
+    .promo-item-was {
+        color: #000000;
+        text-decoration: line-through;
+        font-size: clamp(12px, 0.95vw, 15px);
+    }
+
+    .promo-item-now {
+        color: #000000;
+        font-weight: bold;
+        font-size: clamp(16px, 1.3vw, 20px);
+    }
+
+    /* Full-screen red alarm for a declined/voided card payment, above every other overlay */
+    .alarm-flash {
+        position: fixed;
+        inset: 0;
+        background: #ff1414;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 900;
+        display: none;
+    }
+
+    .alarm-flash.blink {
+        display: block;
+        animation: alarmBlink 0.5s steps(1, end) 4;
+    }
+
+    @keyframes alarmBlink {
+        0%, 100% { opacity: 0; }
+        50% { opacity: 0.55; }
+    }
+
+    /* Item table + totals panel row, totals panel runs alongside the full table height.
+       flex-basis is 0, not auto - its height comes only from the grow/shrink ratio
+       against .bottom-section, never from how many cart rows are in the table. Without
+       this, adding rows made the browser size the row by its content (auto), so the
+       card kept growing downward and eating the keypad's space instead of scrolling. */
+    .table-row {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        gap: 0.7vw;
+    }
+
+    .totals-panel {
+        flex: 0 0 19vw;
+        min-width: 195px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #b8bec8;
+        background: #fff;
+        padding: 0.8vh 0.7vw;
+        gap: 1.1vh;
+        border-radius: 10px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 0 1px rgba(20,30,50,0.3), 0 6px 14px rgba(20,30,50,0.22);
+    }
+
+    /* Each total is its own bordered, color-coded chip, flex:1 fills the panel's full height */
+    .totals-row {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        border-radius: 10px;
+        border: 1.5px solid var(--row-border);
+        background: linear-gradient(to bottom, var(--row-tint-light), var(--row-tint));
+        padding: 0.8vh 1vw;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.75), inset 0 -3px 6px rgba(0,0,0,0.05), 0 4px 0 var(--row-shadow), 0 9px 14px rgba(20,30,50,0.28);
+    }
+
+    .totals-row.amount {
+        --row-border: var(--navy-mid);
+        --row-tint-light: #eef4fc;
+        --row-tint: #d3e2f5;
+        --row-shadow: #0a2c57;
+    }
+
+    .totals-row.payable {
+        --row-border: var(--gold-dark);
+        --row-tint-light: #fdf6e5;
+        --row-tint: #f7e3ae;
+        --row-shadow: #8a6a1c;
+    }
+
+    .totals-row.change {
+        --row-border: var(--green);
+        --row-tint-light: #eafaef;
+        --row-tint: #cdf0d8;
+        --row-shadow: #1c6b34;
+    }
+
+    .t-label {
+        flex: 0 0 22%;
+        border-right: 1.5px solid var(--row-border);
+        padding-right: 0.6vw;
+        margin-right: 0.6vw;
+        font-size: clamp(13px, 1.15vw, 17px);
+        font-weight: bold;
+        color: var(--row-shadow);
+        letter-spacing: 0.3px;
+    }
+
+    .t-value {
+        flex: 1 1 auto;
+        text-align: right;
+        font-size: clamp(26px, 2.9vw, 40px);
+        font-weight: bold;
+        color: var(--row-shadow);
+    }
+
+    /* Item Table */
+    .item-table-wrap {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        border: 1px solid #b8bec8;
+        background: #fff;
+        overflow-y: auto;
+        border-radius: 10px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.8) inset, 0 0 1px rgba(20,30,50,0.3), 0 6px 14px rgba(20,30,50,0.22);
+    }
+
+    /* Shared scrollbar look: wide enough for touch, gold to match the theme */
+    .gold-scroll {
+        scrollbar-width: auto;
+        scrollbar-color: var(--gold) #e9ecf1;
+    }
+
+    .gold-scroll::-webkit-scrollbar {
+        width: 14px;
+    }
+
+    .gold-scroll::-webkit-scrollbar-track {
+        background: #e9ecf1;
+        border-radius: 10px;
+    }
+
+    .gold-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
+        border-radius: 10px;
+        border: 2px solid #e9ecf1;
+    }
+
+    /* Category product-picker overlay */
+    .cat-picker-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 550;
+    }
+
+    .cat-picker-overlay.open { display: flex; }
+
+    /* Every till popup (DISCOUNT/HOLD/RETURN/INQUIRY/VOUCHER/SETTINGS, the
+       category picker, Clear Sale's PIN prompt) shares this white/gold
+       shell - same look as the SETTINGS popup. */
+    .cat-picker-panel {
+        width: min(92vw, 900px);
+        max-height: 80vh;
+        background: #f5f1e2;
+        border: 4px solid var(--gold);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+
+    /* Clips the slide animations so they don't show a scrollbar mid-transition */
+    #actionModalBody {
+        overflow-x: hidden;
+    }
+
+    /* CLEAR SALE's PIN prompt: a smaller card than the other action modals,
+       with a square number pad instead of the default rectangular keys */
+    #actionModalOverlay.clear-sale-modal .cat-picker-panel {
+        width: min(92vw, 380px);
+    }
+
+    #actionModalOverlay.clear-sale-modal .am-keypad button {
+        aspect-ratio: 1 / 1;
+        padding: 0;
+        font-size: clamp(24px, 3vw, 34px);
+    }
+
+    .cat-picker-header {
+        background: #fdfcf8;
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.4vh 1.4vw;
+        font-weight: bold;
+        font-size: clamp(16px, 1.4vw, 22px);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        flex: 0 0 auto;
+        border-bottom: 3px solid var(--gold);
+    }
+
+    .cat-picker-close {
+        background: var(--bg-black);
+        color: var(--gold);
+        border: 1.5px solid var(--gold);
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    /* ADD CREDIT popup: same cream/gold shell as every other till popup, so
+       it reads as part of the app - the black card is the one dark element,
+       sitting on the panel like a physical card on a counter. */
+    .credit-card-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 700;
+    }
+
+    .credit-card-overlay.open { display: flex; }
+
+    .credit-card-panel {
+        width: min(92vw, 440px);
+        background: #f5f1e2;
+        border: 4px solid var(--gold);
+        border-radius: 14px;
+        padding: 3.2vh 3.2vw 3.6vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2.2vh;
+        position: relative;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+    }
+
+    .credit-card-close {
+        position: absolute;
+        top: 1.4vh;
+        right: 1.4vh;
+        background: var(--bg-black);
+        color: var(--gold);
+        border: 1.5px solid var(--gold);
+        border-radius: 8px;
+        width: 34px;
+        height: 34px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .store-credit-card {
+        width: 100%;
+        aspect-ratio: 1.586 / 1;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #202020 0%, #0b0b0d 55%, #202020 100%);
+        border: 1.5px solid var(--gold);
+        box-shadow: inset 0 0 30px rgba(230,185,60,0.08), 0 12px 30px rgba(0,0,0,0.5);
+        padding: 6%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .store-credit-card::before {
+        content: '';
+        position: absolute;
+        top: -60%;
+        left: -25%;
+        width: 55%;
+        height: 220%;
+        background: linear-gradient(75deg, transparent, rgba(230,185,60,0.12), transparent);
+        transform: rotate(10deg);
+        pointer-events: none;
+    }
+
+    .scc-chip {
+        align-self: flex-start;
+        width: 15%;
+        aspect-ratio: 1.3 / 1;
+        border-radius: 5px;
+        background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+        border: 1px solid rgba(0,0,0,0.4);
+    }
+
+    .scc-logo {
+        width: 62%;
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 0 6px rgba(230,185,60,0.3));
+    }
+
+    .scc-footer {
+        width: 100%;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .scc-title {
+        color: var(--gold);
+        font-weight: bold;
+        letter-spacing: 0.14em;
+        font-size: clamp(11px, 1.3vw, 14px);
+        text-transform: uppercase;
+    }
+
+    .scc-serial {
+        color: rgba(230,185,60,0.75);
+        font-size: clamp(11px, 1.2vw, 13px);
+        letter-spacing: 0.14em;
+        font-family: 'Courier New', monospace;
+    }
+
+    .credit-card-amount-row {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 0.8vh;
+    }
+
+    .credit-card-amount-row label {
+        color: var(--gold-dark);
+        font-size: clamp(11px, 1.1vw, 13px);
+        font-weight: bold;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    /* Sidebar INVENTORY button's popup: inventory dashboard slid in from the
+       left, above everything else since it's a whole separate app view */
+    .inventory-popup-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: stretch;
+        justify-content: flex-start;
+        z-index: 1000;
+    }
+
+    .inventory-popup-overlay.open { display: flex; }
+
+    .inventory-popup-panel {
+        width: 85vw;
+        height: 100vh;
+        background: #f5f1e2;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 10px 0 50px rgba(0,0,0,0.6);
+        border-right: 4px solid var(--gold);
+        border-top-right-radius: 22px;
+        border-bottom-right-radius: 22px;
+        overflow: hidden;
+        transform: translateX(-100%);
+        transition: transform 0.35s ease;
+    }
+
+    /* Toggled a frame after .open so the transform actually animates */
+    .inventory-popup-panel.slide-in {
+        transform: translateX(0);
+    }
+
+    .inventory-popup-header {
+        background: #fdfcf8;
+        color: var(--text-dark);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1.4vh 1.4vw;
+        font-weight: bold;
+        font-size: clamp(16px, 1.4vw, 22px);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        flex: 0 0 auto;
+        border-bottom: 3px solid var(--gold);
+        border-top-right-radius: 18px;
+    }
+
+    .inventory-popup-close {
+        background: var(--bg-black);
+        color: var(--gold);
+        border: 1.5px solid var(--gold);
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    #inventoryPopupIframe {
+        flex: 1 1 auto;
+        width: 100%;
+        border: 0;
+    }
+
+    .cat-picker-grid {
+        padding: 1.2vh 1.2vw;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.8vw;
+        overflow-y: auto;
+    }
+
+    .cat-picker-empty {
+        padding: 3vh 1vw;
+        text-align: center;
+        color: var(--text-dark);
+        opacity: 0.55;
+        grid-column: 1 / -1;
+    }
+
+    .cat-pick-item {
+        border: 1px solid #d8d2bd;
+        background: #fff;
+        border-radius: 10px;
+        padding: 1.2vh 0.6vw;
+        text-align: center;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-weight: bold;
+        color: var(--text-dark);
+        font-size: clamp(12px, 1vw, 15px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .cat-pick-item:active {
+        transform: translateY(2px);
+    }
+
+    .cat-pick-item .cat-pick-price {
+        color: var(--green);
+    }
+
+    /* BULLETIN card's popup: full-day forecast + sales-outlook, opened from
+       #weatherCard - see renderWeatherPopup() in dashboard.js. Shares the
+       .cat-picker-overlay/.cat-picker-panel shell, styled like a newspaper
+       classifieds column inside it. */
+    .weather-popup-body {
+        padding: 1.6vh 1.6vw;
+        font-family: Georgia, 'Times New Roman', serif;
+        color: #1b1b1b;
+        overflow-y: auto;
+    }
+
+    .weather-popup-summary {
+        display: flex;
+        align-items: center;
+        gap: 1.2vw;
+        padding-bottom: 1.2vh;
+        border-bottom: 2px solid #1b1b1b;
+        margin-bottom: 1.2vh;
+    }
+
+    .weather-popup-temp {
+        font-size: clamp(30px, 3.2vw, 46px);
+        font-weight: 800;
+    }
+
+    .weather-popup-condition {
+        font-size: clamp(13px, 1.1vw, 16px);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        opacity: 0.8;
+    }
+
+    .weather-popup-gauge-row {
+        display: flex;
+        gap: 1.4vw;
+        margin-bottom: 1.4vh;
+    }
+
+    .weather-popup-gauge {
+        flex: 1 1 0;
+        background: #fff;
+        border: 1px solid #d8d2bd;
+        border-radius: 10px;
+        padding: 1.2vh 1vw;
+        text-align: center;
+    }
+
+    .weather-popup-gauge-value {
+        font-size: clamp(22px, 2vw, 30px);
+        font-weight: 800;
+    }
+
+    .weather-popup-gauge-value.good { color: #2fa84f; }
+    .weather-popup-gauge-value.fair { color: #2b6fd1; }
+    .weather-popup-gauge-value.poor { color: #b21e1e; }
+
+    .weather-popup-gauge-label {
+        font-size: clamp(10px, 0.85vw, 12px);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        opacity: 0.7;
+        margin-top: 0.3vh;
+    }
+
+    .weather-popup-forecast-title {
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: clamp(12px, 1vw, 14px);
+        border-bottom: 1px solid #1b1b1b;
+        padding-bottom: 0.4vh;
+        margin-bottom: 0.6vh;
+    }
+
+    .weather-popup-forecast-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.8vw;
+        padding: 0.6vh 0;
+        border-bottom: 1px dashed #d8d2bd;
+        font-size: clamp(12px, 1vw, 14px);
+    }
+
+    .weather-popup-forecast-row .wf-time { flex: 0 0 auto; font-weight: 700; }
+    .weather-popup-forecast-row .wf-cond { flex: 1 1 0; opacity: 0.85; }
+    .weather-popup-forecast-row .wf-temp { flex: 0 0 auto; font-weight: 700; }
+    .weather-popup-forecast-row .wf-pop  { flex: 0 0 auto; color: #2b6fd1; }
+
+    .weather-popup-empty {
+        text-align: center;
+        opacity: 0.6;
+        padding: 3vh 0;
+    }
+
+    /* Generic sidebar-action modal, shared by DISCOUNT/HOLD/RETURN/INQUIRY/VOUCHER/SETTINGS */
+    .am-list {
+        padding: 1.2vh 1.2vw;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6vh;
+        overflow-y: auto;
+    }
+
+    .am-row {
+        border: 1px solid #d8d2bd;
+        background: #fff;
+        border-radius: 10px;
+        padding: 1.2vh 1vw;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8vw;
+        cursor: pointer;
+        font-weight: bold;
+        color: var(--text-dark);
+        font-size: clamp(13px, 1vw, 16px);
+        text-align: left;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .am-row:active {
+        transform: translateY(2px);
+    }
+
+    .am-row .am-row-sub {
+        font-weight: normal;
+        opacity: 0.65;
+        font-size: 0.85em;
+    }
+
+    .am-row .am-row-value {
+        color: var(--green);
+    }
+
+    /* Held-sale ticket rows (ON HOLD popup): taller cards with a bigger, bolder
+       "Ticket #N" so a ticket is readable at a glance across the counter. */
+    .am-row.held-sale-row {
+        padding: 2vh 1.2vw;
+    }
+
+    .am-row.held-sale-row .am-row-ticket {
+        display: block;
+        font-size: clamp(16px, 1.3vw, 20px);
+        font-weight: 800;
+        margin-bottom: 0.2vh;
+    }
+
+    .am-row.held-sale-row .am-row-sub {
+        font-size: 0.9em;
+    }
+
+    .am-empty {
+        padding: 3vh 1vw;
+        text-align: center;
+        color: var(--text-dark);
+        opacity: 0.55;
+    }
+
+    .am-section {
+        padding: 1.2vh 1.2vw;
+        display: flex;
+        flex-direction: column;
+        gap: 1.2vh;
+    }
+
+    .am-target {
+        font-weight: bold;
+        color: var(--gold-dark);
+        text-align: center;
+        font-size: clamp(14px, 1.2vw, 18px);
+    }
+
+    .am-field {
+        border: 1.5px solid var(--border-gold);
+        border-radius: 8px;
+        padding: 1.2vh 1vw;
+        font-size: clamp(14px, 1.1vw, 18px);
+        font-weight: bold;
+        background: var(--bg-black);
+        color: var(--gold-light);
+        text-align: center;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .am-field::placeholder {
+        color: var(--text-muted);
+        font-weight: normal;
+    }
+
+    .am-btn-row {
+        display: flex;
+        gap: 0.8vw;
+    }
+
+    .am-btn {
+        flex: 1;
+        border: 1px solid #d8d2bd;
+        border-radius: 8px;
+        padding: 1.4vh 1vw;
+        font-weight: bold;
+        font-size: clamp(13px, 1.05vw, 17px);
+        cursor: pointer;
+        background: #fff;
+        color: var(--text-dark);
+    }
+
+    .am-btn:active {
+        transform: translateY(2px);
+    }
+
+    .am-btn.primary {
+        border: none;
+        background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
+    }
+
+    .am-btn.danger {
+        border: none;
+        background: var(--red);
+        color: #fff;
+    }
+
+    .am-btn.ghost {
+        background: transparent;
+        border: 1.5px solid var(--gold-dark);
+        color: var(--gold-dark);
+    }
+
+    .am-keypad {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.6vw;
+    }
+
+    /* Dark navy/gold keys, same family as the SETTINGS cards, so the number
+       pad reads consistently with the rest of the popup's theme */
+    .am-keypad button {
+        border: 1.5px solid var(--gold);
+        border-radius: 8px;
+        background: radial-gradient(circle at 30% 24%, #2a3340 0%, #12161d 55%, #05070a 100%);
+        color: var(--gold-light);
+        font-weight: bold;
+        font-size: clamp(16px, 1.3vw, 22px);
+        padding: 1.4vh 0;
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .am-keypad button:active {
+        transform: translateY(2px);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .am-scan-row {
+        display: flex;
+        gap: 0.6vw;
+    }
+
+    .am-scan-row .am-field {
+        flex: 1;
+    }
+
+    /* SETTINGS modal: Profile, Invoices, System, all in the same shell */
+    .stg-section-title {
+        font-weight: bold;
+        color: var(--gold-dark);
+        font-size: clamp(11px, 0.85vw, 13px);
+        letter-spacing: 0.06em;
+        opacity: 0.7;
+        margin: 0.4vh 0.1vw 0;
+    }
+
+    .stg-profile-card {
+        border: 1px solid #d8d2bd;
+        background: #fff;
+        border-radius: 10px;
+        padding: 1.2vh 1vw;
+        display: flex;
+        align-items: center;
+        gap: 0.9vw;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .stg-avatar {
+        flex: none;
+        overflow: hidden;
+        background: #f2f4f8;
+        position: relative;
+    }
+
+    .stg-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .stg-avatar.editable {
+        cursor: pointer;
+    }
+
+    .stg-avatar.editable::after {
+        content: '✎';
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        width: 1.6em;
+        height: 1.6em;
+        border-radius: 50%;
+        background: var(--gold);
+        color: #fff;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #fff;
+    }
+
+    .stg-profile-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .stg-profile-name {
+        font-weight: bold;
+        color: var(--text-dark);
+        font-size: clamp(14px, 1.15vw, 18px);
+    }
+
+    .stg-profile-sub {
+        color: var(--text-dark);
+        opacity: 0.65;
+        font-size: 0.85em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stg-field-label {
+        font-weight: bold;
+        color: var(--gold-dark);
+        font-size: clamp(11px, 0.85vw, 13px);
+        margin-bottom: -0.6vh;
+    }
+
+    .stg-invoice-row {
+        border: 1px solid #d8d2bd;
+        background: #fff;
+        border-radius: 10px;
+        padding: 1vh 1vw;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8vw;
+        font-weight: bold;
+        color: var(--text-dark);
+        font-size: clamp(13px, 1vw, 16px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    .stg-invoice-row .am-row-sub {
+        font-weight: normal;
+        opacity: 0.65;
+        font-size: 0.85em;
+        display: block;
+    }
+
+    /* SETTINGS home: a card per function, tapping one opens its screen.
+       5x2 grid, uniform dark cards with a gold ring icon - matches the
+       SETTINGS popup design exactly rather than the old per-section colors. */
+    .stg-card-grid {
+        padding: 1.6vh 1.6vw;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        justify-items: center;
+        gap: 1.8vh 1vw;
+    }
+
+    /* TILL READINGS: a 2x2 grid of wider cards instead of the 5x2 square
+       grid, so it reads as its own small popup rather than a squeezed-down
+       SETTINGS home screen. */
+    .stg-card-grid.cols-2 {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 560px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .stg-card-grid.cols-2 .stg-card {
+        max-width: none;
+        width: 100%;
+        aspect-ratio: 16 / 11;
+    }
+
+    .stg-card {
+        width: 100%;
+        max-width: 170px;
+        aspect-ratio: 1 / 1;
+        border: 1.5px solid var(--gold);
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1vh;
+        cursor: pointer;
+        font-weight: bold;
+        color: #fff;
+        font-size: clamp(14px, 1.15vw, 17px);
+        letter-spacing: 0.02em;
+        text-align: center;
+        padding: 0.6vh 0.5vw;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        background: radial-gradient(circle at 30% 24%, #2a3340 0%, #12161d 55%, #05070a 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -3px 6px rgba(0,0,0,0.4), 0 5px 10px rgba(0,0,0,0.4);
+        transform: translateY(0);
+        transition: box-shadow 0.08s, transform 0.08s;
+    }
+
+    .stg-card:active {
+        transform: translateY(3px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .stg-card-icon {
+        width: clamp(40px, 3.8vw, 54px);
+        height: clamp(40px, 3.8vw, 54px);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid var(--gold);
+        background: rgba(230,185,60,0.08);
+    }
+
+    .stg-card-icon svg {
+        width: 52%;
+        height: 52%;
+        color: var(--gold);
+    }
+
+    /* Back button, returns to whichever screen opened this sub-screen */
+    .stg-back-btn {
+        align-self: flex-start;
+        border: none;
+        background: transparent;
+        display: flex;
+        align-items: center;
+        gap: 0.4vw;
+        color: var(--gold-dark);
+        font-weight: bold;
+        font-size: clamp(13px, 1.05vw, 16px);
+        cursor: pointer;
+        padding: 0.6vh 0.2vw 0.2vh;
+        margin-bottom: 0.2vh;
+    }
+
+    .stg-back-btn:active {
+        opacity: 0.6;
+    }
+
+    .stg-back-icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    /* Drill-in/out transition - a sub-screen slides in from the right,
+       the card grid slides back in from the left, so tapping a card
+       reads as "another popup sliding in on top" rather than a hard cut. */
+    @keyframes stgSlideInRight {
+        from { transform: translateX(28px); opacity: 0; }
+        to   { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes stgSlideInLeft {
+        from { transform: translateX(-28px); opacity: 0; }
+        to   { transform: translateX(0); opacity: 1; }
+    }
+
+    .stg-slide-right { animation: stgSlideInRight 0.2s ease-out; }
+    .stg-slide-left  { animation: stgSlideInLeft 0.2s ease-out; }
+
+    .item-table tbody tr.selected-line {
+        outline: 2px solid var(--gold-dark);
+        outline-offset: -2px;
+        background: #fdf3d8;
+    }
+
+    .item-table tbody tr {
+        cursor: pointer;
+    }
+
+    .line-discount-tag {
+        color: var(--red);
+        font-weight: bold;
+        font-size: 0.82em;
+        display: block;
+    }
+
+    .line-promo-tag {
+        color: var(--green-dark);
+        font-weight: bold;
+        font-size: 0.82em;
+        display: block;
+    }
+
+    .line-was-price {
+        color: var(--text-muted, #888);
+        text-decoration: line-through;
+        font-size: 0.82em;
+        display: block;
+    }
+
+    .item-table td:nth-child(5) {
+        padding-right: 0.15vw;
+    }
+
+    .item-table td.col-delete {
+        text-align: center;
+        white-space: nowrap;
+        padding-left: 0;
+        padding-right: 0.15vw;
+    }
+
+    .line-delete-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 1px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        color: var(--red, #c0392b);
+    }
+
+    .line-delete-btn:hover,
+    .line-delete-btn:active {
+        background: rgba(192, 57, 43, 0.14);
+    }
+
+    .line-delete-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .item-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        font-size: clamp(14px, 1.15vw, 18px);
+    }
+
+    .item-table th {
+        background: linear-gradient(to bottom, var(--gold-light), var(--gold));
+        color: var(--text-dark);
+        text-align: left;
+        padding: 0.7vh 0.6vw;
+        font-weight: bold;
+        position: sticky;
+        top: 0;
+        letter-spacing: 0.3px;
+    }
+
+    /* Every row stays a fixed height no matter how long the text is - a long
+       description truncates instead of wrapping and growing the row, so
+       row size never changes as more items are added; the wrap only scrolls */
+    .item-table td {
+        border-bottom: 1px solid #eee;
+        padding: 0.5vh 0.6vw;
+        height: 3.4vh;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Bottom section: categories + keypad, capped so keypad buttons stay a fixed size */
+    .bottom-section {
+        flex: 1.15 1 40%;
+        min-height: 0;
+        max-height: 480px;
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Grows to fill the width the keypad doesn't need. Holds the weather card at
+       top, then empty space, then the categories-block sitting at the bottom */
+    .quick-panel {
+        flex: 3 1 0;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6vh;
+    }
+
+    /* Small news-bulletin-style card: daily weather -> sales-outlook signal,
+       see /api/weather/insight and loadWeatherInsight() in dashboard.js.
+       Styled like a torn newspaper clipping; the headline is typed out letter
+       by letter (see typeWeatherHeadline() in dashboard.js) rather than
+       scrolling, so it reads like someone is live-typing the bulletin. */
+    .weather-card {
+        position: relative;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        gap: 0.8vw;
+        background: #f2ead4;
+        background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.035) 0px, rgba(0,0,0,0.035) 1px, transparent 1px, transparent 3px);
+        border-radius: 4px;
+        padding: 1.1vh 1vw;
+        border-top: 3px double #1b1b1b;
+        border-bottom: 1px solid #1b1b1b;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        overflow: hidden;
+        cursor: pointer;
+        transition: box-shadow 0.2s;
+    }
+
+    .weather-card:hover { box-shadow: 0 5px 14px rgba(0,0,0,0.28); }
+
+    .weather-card.green { box-shadow: inset 0 0 0 2px rgba(47,140,79,0.55), 0 3px 8px rgba(0,0,0,0.15); }
+    .weather-card.red   { box-shadow: inset 0 0 0 2px rgba(178,30,30,0.6), 0 3px 8px rgba(0,0,0,0.15); }
+    .weather-card.blue  { box-shadow: inset 0 0 0 2px rgba(43,90,160,0.55), 0 3px 8px rgba(0,0,0,0.15); }
+
+    /* Little masthead strip: "BULLETIN" label + the rain/sun weather lamp.
+       Kept narrow on purpose - see .weather-ticker below - so the typed
+       headline gets most of the card's width. */
+    .weather-masthead {
+        position: relative;
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.3vh;
+        padding: 0 0.5vw 0 0;
+        border-right: 2px solid #1b1b1b;
+        font-family: Georgia, 'Times New Roman', serif;
+        overflow: hidden;
+    }
+
+    .weather-masthead-label {
+        font-size: clamp(7px, 0.55vw, 9px);
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        color: #1b1b1b;
+        white-space: nowrap;
+    }
+
+    /* Rain-warning lamp: hidden unless the backend flags rain_alert, in which
+       case it's a blinking red signal light regardless of the green/blue/red
+       sales-outlook border above */
+    .weather-signal {
+        display: none;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #b21e1e;
+        box-shadow: 0 0 6px 2px rgba(178,30,30,0.9);
+    }
+
+    .weather-card.rain-alert .weather-signal {
+        display: block;
+        animation: weather-signal-blink 1s ease-in-out infinite;
+    }
+
+    @keyframes weather-signal-blink {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0.25; }
+    }
+
+    /* Falling-rain overlay, covering the WHOLE bulletin card (masthead +
+       ticker) when rain is likely today - purely decorative, doesn't block
+       clicks. Lives directly on .weather-card, not the masthead, so it
+       spans the full box. */
+    .weather-rain-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .weather-card.rain-alert .weather-rain-overlay {
+        display: block;
+    }
+
+    .weather-rain-overlay span {
+        position: absolute;
+        top: -14px;
+        width: 1.5px;
+        height: 12px;
+        background: linear-gradient(to bottom, rgba(43,90,160,0) 0%, rgba(43,90,160,0.6) 100%);
+        animation: weather-raindrop 1s linear infinite;
+    }
+
+    .weather-rain-overlay span:nth-child(1)  { left: 3%;  animation-delay: 0s;    }
+    .weather-rain-overlay span:nth-child(2)  { left: 14%; animation-delay: 0.5s;  }
+    .weather-rain-overlay span:nth-child(3)  { left: 25%; animation-delay: 0.2s;  }
+    .weather-rain-overlay span:nth-child(4)  { left: 36%; animation-delay: 0.7s;  }
+    .weather-rain-overlay span:nth-child(5)  { left: 47%; animation-delay: 0.1s;  }
+    .weather-rain-overlay span:nth-child(6)  { left: 58%; animation-delay: 0.6s;  }
+    .weather-rain-overlay span:nth-child(7)  { left: 69%; animation-delay: 0.3s;  }
+    .weather-rain-overlay span:nth-child(8)  { left: 80%; animation-delay: 0.55s; }
+    .weather-rain-overlay span:nth-child(9)  { left: 90%; animation-delay: 0.15s; }
+    .weather-rain-overlay span:nth-child(10) { left: 97%; animation-delay: 0.4s;  }
+
+    @keyframes weather-raindrop {
+        0%   { transform: translateY(-8px); opacity: 0; }
+        15%  { opacity: 0.8; }
+        100% { transform: translateY(52px); opacity: 0; }
+    }
+
+    /* Sunlight overlay, covering the WHOLE bulletin card - like the rain
+       overlay above - whenever no rain is expected today: one glowing
+       pulsing sun near the masthead plus scattered light glints drifting
+       across the rest of the box. */
+    .weather-sun-overlay {
+        display: none;
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .weather-card:not(.rain-alert) .weather-sun-overlay {
+        display: block;
+    }
+
+    .weather-sun-core {
+        position: absolute;
+        top: 50%;
+        left: 7%;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        background: radial-gradient(circle, #ffe08a 0%, rgba(255,196,64,0.65) 55%, rgba(255,196,64,0) 100%);
+        box-shadow: 0 0 9px 3px rgba(255,196,64,0.5);
+        animation: weather-sun-pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes weather-sun-pulse {
+        0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.7; }
+        50%      { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+    }
+
+    .weather-sun-glint {
+        position: absolute;
+        top: 50%;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(255,224,138,0.95) 0%, rgba(255,224,138,0) 75%);
+        animation: weather-sun-glint 2.6s ease-in-out infinite;
+    }
+
+    .weather-sun-glint:nth-child(2) { left: 24%; top: 30%; animation-delay: 0s;    }
+    .weather-sun-glint:nth-child(3) { left: 40%; top: 68%; animation-delay: 0.5s;  }
+    .weather-sun-glint:nth-child(4) { left: 55%; top: 25%; animation-delay: 1s;    }
+    .weather-sun-glint:nth-child(5) { left: 70%; top: 65%; animation-delay: 0.3s;  }
+    .weather-sun-glint:nth-child(6) { left: 84%; top: 35%; animation-delay: 0.9s;  }
+    .weather-sun-glint:nth-child(7) { left: 95%; top: 60%; animation-delay: 1.3s;  }
+
+    @keyframes weather-sun-glint {
+        0%, 100% { opacity: 0; transform: scale(0.4); }
+        50%      { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* Characters are typed one at a time into weather-ticker-text and the
+       container's scrollLeft is pushed to scrollWidth after each one (see
+       typeWeatherHeadline() in dashboard.js) - so the line is typed letter
+       by letter AND slowly slides left as it grows, like an old
+       wire-service ticker, instead of freezing once it hits an ellipsis.
+       overflow:hidden still blocks the user from scrolling it by hand; only
+       the script drives scrollLeft. Given the bulk of the card's width now
+       that the masthead is narrow. */
+    .weather-ticker {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: clamp(24px, 2.2vw, 34px);
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        scroll-behavior: smooth;
+        position: relative;
+    }
+
+    .weather-ticker-text {
+        display: inline-block;
+        white-space: nowrap;
+        color: #1b1b1b;
+        font-family: Georgia, 'Times New Roman', serif;
+        font-weight: 700;
+        font-size: clamp(16px, 1.5vw, 24px);
+        letter-spacing: 0.2px;
+    }
+
+    /* Typewriter caret: a blinking bar right after the last typed character */
+    .weather-ticker-text::after {
+        content: '';
+        display: inline-block;
+        width: 2px;
+        height: 1em;
+        margin-left: 2px;
+        background: currentColor;
+        vertical-align: -0.15em;
+        animation: weather-caret-blink 0.85s step-end infinite;
+    }
+
+    @keyframes weather-caret-blink {
+        0%, 50%   { opacity: 1; }
+        50.01%, 100% { opacity: 0; }
+    }
+
+    /* Fills all the height .quick-panel has left under the weather card, so
+       BEST SALE PRODUCTS + CATEGORIES occupy the whole remaining area with
+       no blank gap */
+    .categories-block {
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5vh;
+        padding: 1vh 1vw;
+        border-radius: 16px;
+        background: linear-gradient(155deg, rgba(242,205,108,0.38) 0%, rgba(230,185,60,0.22) 45%, rgba(201,154,46,0.14) 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), inset 0 0 0 1.5px rgba(230,185,60,0.5), 0 6px 16px rgba(8,34,69,0.14);
+        /* Hard boundary: nothing inside (product/category cards) is ever allowed
+           to visually spill past this gold card's edge */
+        overflow: hidden;
+    }
+
+    .section-title {
+        color: #000000;
+        font-weight: bold;
+        font-size: clamp(16px, 1.4vw, 20px);
+        letter-spacing: 0.3px;
+        flex: 0 0 auto;
+        text-shadow: none;
+    }
+
+    .section-subtitle {
+        color: var(--navy);
+        font-weight: bold;
+        font-size: clamp(11px, 0.95vw, 14px);
+        letter-spacing: 0.6px;
+        opacity: 0.75;
+        flex: 0 0 auto;
+        margin-top: 0.2vh;
+    }
+
+    /* PRODUCTS and CATEGORIES both scroll sideways (not up/down): a 2-row grid
+       that lays cards out in columns (grid-auto-flow:column), with whatever
+       doesn't fit horizontally reached by scrolling right - scrollbar hidden,
+       same idea as .open-sale-quick. The grid itself fills 100% of the real
+       height its quick-picks-group is given (no guessed fixed/vh size, so
+       cards can never be too big for the space and get cut off, or too small
+       and leave a dead gap) - grid-template-rows splits that actual height
+       into 2 equal rows, and each card's width is derived from its own
+       resolved row height via aspect-ratio, so columns stay perfectly square
+       at whatever size the rows end up being. */
+    .products-grid,
+    .categories-grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: grid;
+        grid-auto-flow: column;
+        grid-template-rows: repeat(2, 1fr);
+        grid-auto-columns: max-content;
+        gap: 0.6vh 0.6vw;
+        /* The cards' own glow/shadow (box-shadow) bleeds a few px past their edges -
+           without this, that bleed on the top/bottom-most row gets clipped by this
+           grid's own overflow, looking like the button itself is cut off. This
+           padding reserves room for it (cards end up marginally smaller, but whole) */
+        padding: 6px 4px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+    }
+
+    .products-grid::-webkit-scrollbar,
+    .categories-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .prod-btn,
+    .cat-btn {
+        /* One uniform grey/graphite tone for every card (was a rotating color
+           palette) - still the same glossy 3D/glow treatment, just monochrome */
+        --btn-top:#7a828a;
+        --btn-mid:#4b5158;
+        --btn-dark:#26292d;
+        --btn-ledge:#151719;
+        --btn-glow: rgba(180,188,196,0.55);
+        position: relative;
+        height: 100%;
+        width: auto;
+        aspect-ratio: 1 / 1;
+        border: none;
+        background: radial-gradient(circle at 30% 24%, var(--btn-top) 0%, var(--btn-mid) 55%, var(--btn-dark) 100%);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25vh;
+        padding: 4px 3px;
+        font-size: clamp(11px, 1vw, 15px);
+        font-weight: bold;
+        color: #fff;
+        cursor: pointer;
+        text-align: center;
+        line-height: 1.15;
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.3),
+            inset 0 -3px 6px rgba(0,0,0,0.35),
+            0 3px 0 var(--btn-ledge),
+            0 5px 8px rgba(0,0,0,0.4),
+            0 0 9px var(--btn-glow);
+        transform: translateY(0);
+        transition: box-shadow 0.08s, transform 0.08s, filter 0.15s;
+        overflow: hidden;
+    }
+
+    /* Soft diagonal sheen - the glossy "marble" highlight, sits above the gradient but below the label */
+    .prod-btn::before,
+    .cat-btn::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(155deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0) 45%);
+        pointer-events: none;
+    }
+
+    @media (hover: hover) {
+        .prod-btn:hover,
+        .cat-btn:hover {
+            filter: brightness(1.12);
+        }
+    }
+
+    .prod-btn:active,
+    .cat-btn:active {
+        background: radial-gradient(circle at 30% 24%, var(--btn-mid) 0%, var(--btn-dark) 100%);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 0 14px var(--btn-glow);
+        transform: translateY(2px);
+        filter: none;
+    }
+
+    .cat-icon {
+        position: relative;
+        z-index: 1;
+        width: clamp(22px, 2.3vw, 34px);
+        height: clamp(22px, 2.3vw, 34px);
+        flex: 0 0 auto;
+        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+    }
+
+    /* Card label: clamped to 2 lines then ellipsized, so a long name (e.g.
+       "Scarfs Range - Winter Collection") never grows or breaks the square card */
+    .prod-btn .btn-label,
+    .cat-btn .btn-label {
+        position: relative;
+        z-index: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        word-break: break-word;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+
+    /* A product photo is shown exactly like a CATEGORIES icon: a small fixed
+       thumbnail centered above the label, on the same glowing card - no boxed-in
+       white/light backing chip behind it, just the product itself sitting
+       directly on the card with a transparent background. */
+    .prod-img {
+        position: relative;
+        z-index: 1;
+        width: clamp(28px, 3.6vw, 48px);
+        height: clamp(28px, 3.6vw, 48px);
+        flex: 0 0 auto;
+        object-fit: contain;
+        background: transparent;
+    }
+
+    /* Holds the OPEN SALE quick-price card and the keypad side by side,
+       pulled in close to each other (tighter than bottom-section's own gap) */
+    .keypad-area {
+        flex: 2 1 auto;
+        display: flex;
+        gap: 8px;
+    }
+
+    /* Column holding the quick-price card, same overall width/height as the
+       number pad beside it */
+    .open-sale-col {
+        flex: 0 0 1.7in;
+        width: 1.7in;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Tiny caption sitting right above the quick-price grid, just enough
+       to label the card without eating into the buttons' space */
+    .open-sale-label {
+        flex: 0 0 auto;
+        font-size: 8px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        text-align: center;
+        line-height: 1;
+        color: var(--gold-light);
+        text-transform: uppercase;
+        padding: 4px 0;
+        border-radius: 8px;
+        background: radial-gradient(circle at 32% 26%, #2b2b2b 0%, #000000 100%);
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.15), inset 0 -3px 4px rgba(0,0,0,0.4), 0 2px 0 #000000, 0 3px 6px rgba(0,0,0,0.35);
+    }
+
+    /* OPEN SALE quick-price card: a black/gold card beside the keypad,
+       fills the column, one tap adds that price with no typing */
+    .open-sale-quick {
+        flex: 1 1 auto;
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-auto-rows: min-content;
+        align-content: start;
+        gap: 0.7vh 0.5vw;
+        padding: 0.6vh 0.4vw;
+        border-radius: 16px;
+        background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 0 0 1.5px rgba(0,0,0,0.25), 0 6px 14px rgba(0,0,0,0.4);
+        overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .open-sale-quick::-webkit-scrollbar {
+        display: none;
+    }
+
+    .open-sale-quick-btn {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border: none;
+        border-radius: 12px;
+        background: radial-gradient(circle at 32% 26%, #2b2b2b 0%, #000000 100%);
+        color: var(--gold-light);
+        font-weight: bold;
+        font-size: clamp(16px, 1.5vw, 22px);
+        cursor: pointer;
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.15), inset 0 -4px 6px rgba(0,0,0,0.4), 0 3px 0 #000000, 0 5px 8px rgba(0,0,0,0.35);
+        transform: scale(1);
+        transition: box-shadow 0.08s, transform 0.08s, filter 0.08s;
+    }
+
+    .open-sale-quick-btn:active {
+        transform: scale(1.14);
+        z-index: 2;
+        filter: brightness(1.4);
+        box-shadow: inset 0 2px 3px rgba(255,255,255,0.25), inset 0 -3px 5px rgba(0,0,0,0.3), 0 0 10px 3px rgba(255,220,110,0.9), 0 0 26px rgba(255,200,80,0.6), 0 3px 0 #000000, 0 5px 8px rgba(0,0,0,0.35);
+    }
+
+    /* Fixed to its own content width so it never leaves unused space */
+    .keypad-block {
+        flex: 1 1 620px;
+        min-width: 0;
+    }
+
+    .keypad-grid {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(5, 1fr);
+        gap: 0.7vh 0.6vw;
+    }
+
+    /* Puffy glossy "clay" 3D style, digit breathes with a faint glow */
+    @keyframes numGlowWhite {
+        0%, 100% { text-shadow: 0 0 1px rgba(40,100,180,0.15); }
+        50%      { text-shadow: 0 0 4px rgba(40,100,180,0.4); }
+    }
+
+    @keyframes numGlowOrange {
+        0%, 100% { text-shadow: 0 0 1px rgba(255,160,60,0.2); }
+        50%      { text-shadow: 0 0 5px rgba(255,160,60,0.55); }
+    }
+
+    .key-btn {
+        border: none;
+        border-radius: 10%;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 0.3vw;
+        font-size: clamp(36px, 4.2vw, 58px);
+        font-weight: bold;
+        color: #fff;
+        cursor: pointer;
+        background: radial-gradient(circle at 32% 26%, #2d6099 0%, var(--navy) 45%, var(--navy-dark) 100%);
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.35), inset 0 -7px 11px rgba(0,0,0,0.35), 0 0 5px rgba(6,21,39,0.4), 0 7px 0 #04101f, 0 12px 15px rgba(0,0,0,0.5);
+        transform: translateY(0);
+        transition: box-shadow 0.15s, transform 0.08s;
+    }
+
+    /* Every key fills its grid cell fully for one uniform, evenly-spaced set */
+    .key-btn:not(.action) {
+        animation: numGlowWhite 2.6s ease-in-out infinite;
+    }
+
+    .key-btn.orange-btn:not(.action) {
+        animation: numGlowOrange 2.6s ease-in-out infinite;
+    }
+
+    .key-btn:active {
+        animation-play-state: paused;
+        transform: translateY(7px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.35), 0 0 12px rgba(120,170,230,0.6), 0 0 24px rgba(120,170,230,0.3), 0 1px 0 #04101f, 0 2px 4px rgba(0,0,0,0.3);
+        text-shadow: 0 0 5px rgba(50,115,195,0.7);
+    }
+
+    .key-btn.action {
+        flex-direction: column;
+        font-size: clamp(13px, 1.15vw, 18px);
+        gap: 4px;
+        line-height: 1.2;
+    }
+
+    .key-btn .k-icon {
+        width: clamp(22px, 2vw, 30px);
+        height: clamp(22px, 2vw, 30px);
+    }
+
+    #keypadInventoryBtn {
+        font-size: clamp(14px, 1.25vw, 19px);
+    }
+
+    #keypadInventoryBtn .k-icon {
+        width: clamp(28px, 2.6vw, 38px);
+        height: clamp(28px, 2.6vw, 38px);
+    }
+
+    /* Flash: a bright blink fired on every tap, so the press is unmistakable */
+    @keyframes keyFlash {
+        0%   { filter: brightness(1); }
+        25%  { filter: brightness(2.1); }
+        100% { filter: brightness(1); }
+    }
+
+    .key-btn.flash {
+        animation: keyFlash 0.28s ease-out;
+    }
+
+    .key-btn.tan {
+        background: radial-gradient(circle at 32% 26%, var(--gold) 0%, var(--gold-dark) 45%, #a67f22 100%);
+        color: var(--text-dark);
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.55), inset 0 -7px 11px rgba(0,0,0,0.18), 0 0 5px rgba(180,140,30,0.35), 0 7px 0 #6b5015, 0 12px 15px rgba(0,0,0,0.4);
+    }
+
+    .key-btn.tan:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.2), 0 0 11px rgba(255,210,90,0.6), 0 0 22px rgba(255,210,90,0.3), 0 1px 0 #6b5015, 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    /* Black/gold - SETTINGS key, moved here from the sidebar. */
+    .key-btn.black-gold {
+        background: radial-gradient(circle at 32% 26%, #3a3a3a 0%, #161616 45%, #000000 100%);
+        color: var(--gold);
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.12), inset 0 -7px 11px rgba(0,0,0,0.5), 0 0 5px rgba(0,0,0,0.6), 0 7px 0 #000000, 0 12px 15px rgba(0,0,0,0.55);
+    }
+
+    .key-btn.black-gold:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 11px rgba(230,185,60,0.6), 0 0 22px rgba(230,185,60,0.3), 0 1px 0 #000000, 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    /* Bigger icon + label so SETTINGS reads clearly on its own dark key */
+    .key-btn.black-gold .k-icon {
+        width: clamp(30px, 2.8vw, 40px);
+        height: clamp(30px, 2.8vw, 40px);
+    }
+
+    .key-btn.black-gold.action {
+        font-size: clamp(15px, 1.4vw, 20px);
+    }
+
+    .key-btn.pale {
+        background: radial-gradient(circle at 32% 26%, #ffffff 0%, #e2e8ef 45%, #b9c4d1 100%);
+        color: var(--navy);
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.9), inset 0 -7px 11px rgba(0,0,0,0.08), 0 0 5px rgba(200,210,224,0.35), 0 7px 0 #8b96a4, 0 12px 15px rgba(0,0,0,0.3);
+    }
+
+    .key-btn.pale:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.1), 0 0 10px rgba(255,255,255,0.6), 0 0 20px rgba(220,230,240,0.3), 0 1px 0 #8b96a4, 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .key-btn.pale .k-icon {
+        width: clamp(26px, 2.4vw, 34px);
+        height: clamp(26px, 2.4vw, 34px);
+    }
+
+    .key-btn.green-btn {
+        background: radial-gradient(circle at 32% 26%, var(--green-light) 0%, #3aad61 45%, var(--green) 100%);
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), inset 0 -7px 11px rgba(0,0,0,0.2), 0 0 5px rgba(47,158,79,0.3), 0 7px 0 #1c6b34, 0 12px 15px rgba(0,0,0,0.35);
+    }
+
+    .key-btn.green-btn:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.25), 0 0 11px rgba(90,220,130,0.6), 0 0 22px rgba(90,220,130,0.3), 0 1px 0 #1c6b34, 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .key-btn.orange-btn {
+        background: radial-gradient(circle at 32% 26%, #e8823a 0%, #c85f14 45%, #a34b0f 100%);
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.4), inset 0 -7px 11px rgba(0,0,0,0.25), 0 0 5px rgba(150,75,15,0.35), 0 7px 0 #5c2d0a, 0 12px 15px rgba(0,0,0,0.4);
+    }
+
+    .key-btn.orange-btn:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.25), 0 0 11px rgba(255,160,80,0.6), 0 0 22px rgba(255,160,80,0.3), 0 1px 0 #5c2d0a, 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* ===== Right Sidebar ===== */
+    .right-sidebar {
+        flex: 0 0 11.75vw;
+        min-width: 170px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9vh;
+        background: var(--bg);
+    }
+
+    .sidebar-top-row {
+        flex: 0 0 auto;
+        display: flex;
+        gap: 0.5vw;
+        margin-bottom: 0.9vh;
+    }
+
+    .sidebar-top-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        border: none;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        padding: 0.2vh 0.2vw;
+        color: #fff;
+        font-weight: bold;
+        font-size: clamp(11px, 0.95vw, 14px);
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transform: translateY(0);
+        transition: box-shadow 0.15s, transform 0.08s;
+    }
+
+    .sidebar-top-btn .top-btn-icon {
+        width: clamp(16px, 1.5vw, 22px);
+        height: clamp(16px, 1.5vw, 22px);
+    }
+
+    /* Same "puffy glossy clay" 3D treatment as the number keypad's .key-btn */
+    .back-branch-btn {
+        background: radial-gradient(circle at 32% 26%, var(--gold) 0%, var(--gold-dark) 45%, #8a6a1c 100%);
+        color: #1a1300;
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -7px 11px rgba(0,0,0,0.25), 0 0 5px rgba(0,0,0,0.3), 0 4px 0 #6b5015, 0 7px 9px rgba(0,0,0,0.4);
+    }
+
+    .back-branch-btn:active {
+        transform: translateY(4px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 11px rgba(255,210,90,0.6), 0 0 22px rgba(255,210,90,0.3), 0 1px 0 #6b5015, 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* LOGOUT: danger red, distinct from BACK */
+    .logout-dash-btn {
+        background: radial-gradient(circle at 32% 26%, var(--red) 0%, var(--red-dark) 45%, #5c1610 100%);
+        color: #fff;
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.3), inset 0 -7px 11px rgba(0,0,0,0.3), 0 0 5px rgba(0,0,0,0.35), 0 4px 0 #4a120d, 0 7px 9px rgba(0,0,0,0.4);
+    }
+
+    .logout-dash-btn:active {
+        transform: translateY(4px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.35), 0 0 11px rgba(255,110,90,0.6), 0 0 22px rgba(255,110,90,0.3), 0 1px 0 #4a120d, 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Dark "puffy glossy clay" treatment across every menu button, recolored
+       per button. Tapping one flips it to the brighter "selected" look. */
+    .menu-btn {
+        --btn-top:#3a4756;
+        --btn-mid:#212b36;
+        --btn-dark:#11161d;
+        --btn-ledge:#05070a;
+        --btn-glow: rgba(140,160,185,0.6);
+        flex: 1 1 0;
+        min-height: 0;
+        border: none;
+        border-radius: 8px;
+        display: flex;
+        align-items: stretch;
+        overflow: hidden;
+        cursor: pointer;
+        background: radial-gradient(circle at 30% 24%, var(--btn-top) 0%, var(--btn-mid) 55%, var(--btn-dark) 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -3px 6px rgba(0,0,0,0.4), 0 5px 0 var(--btn-ledge), 0 9px 12px rgba(0,0,0,0.45);
+        transform: translateY(0);
+        transition: box-shadow 0.08s, transform 0.08s;
+    }
+
+    .menu-btn:active {
+        transform: translateY(5px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 0 12px var(--btn-glow), 0 1px 0 var(--btn-ledge), 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    .menu-btn .icon-box {
+        flex: 0 0 22%;
+        width: 22%;
+        height: 100%;
+        border: none;
+        border-radius: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        background: radial-gradient(circle at 35% 30%, var(--btn-mid), var(--btn-dark) 100%);
+        box-shadow: inset -4px 0 8px rgba(0,0,0,0.4), inset 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+
+    .menu-btn .m-icon {
+        width: 55%;
+        height: 55%;
+        color: #fff;
+        filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));
+    }
+
+    .menu-btn .label {
+        flex: 1 1 78%;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 0.3vw;
+        color: #fff;
+        font-weight: bold;
+        font-size: clamp(17px, 1.65vw, 23px);
+        line-height: 1.15;
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    /* Selected/active state: the button's own color brightens, until another tab is tapped */
+    .menu-btn.selected {
+        background: radial-gradient(circle at 30% 24%, var(--btn-top) 0%, var(--btn-top) 55%, var(--btn-mid) 100%);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -3px 6px rgba(0,0,0,0.3), 0 5px 0 var(--btn-ledge), 0 9px 12px rgba(0,0,0,0.45), 0 0 16px var(--btn-glow);
+    }
+
+    .menu-btn.selected:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.5), 0 1px 0 var(--btn-ledge), 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .menu-btn.selected .icon-box {
+        background: radial-gradient(circle at 35% 30%, #fff, var(--btn-top) 100%);
+        box-shadow: inset -4px 0 8px rgba(0,0,0,0.15), inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .menu-btn.selected .m-icon {
+        color: var(--btn-dark);
+        filter: none;
+    }
+
+    .menu-btn.selected .label {
+        color: #fff;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+    }
+
+    /* "Busy" state: flips to black/gold while its action runs, removed when it finishes */
+    .menu-btn.busy {
+        background: radial-gradient(circle at 30% 24%, #3a3a3a 0%, #161616 55%, #000000 100%) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -3px 6px rgba(0,0,0,0.6), 0 5px 0 #000000, 0 9px 12px rgba(0,0,0,0.5), 0 0 16px rgba(230,185,60,0.6);
+        transform: scale(1.08);
+        position: relative;
+        z-index: 2;
+        transition: box-shadow 0.15s, transform 0.15s;
+    }
+
+    .menu-btn.busy:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 12px rgba(230,185,60,0.7), 0 1px 0 #000000, 0 2px 4px rgba(0,0,0,0.5);
+        transform: scale(1.08) translateY(3px);
+    }
+
+    .menu-btn.busy .icon-box {
+        background: radial-gradient(circle at 35% 30%, #2a2a2a, #000000 100%) !important;
+        box-shadow: inset -4px 0 8px rgba(0,0,0,0.6), inset 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    .menu-btn.busy .m-icon {
+        color: var(--gold);
+        filter: none;
+    }
+
+    .menu-btn.busy .label {
+        color: var(--gold);
+        text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* Per-button dark marble color, every sidebar action gets its own hue */
+    .menu-btn.c-inventory { --btn-top:#6e6e6e; --btn-mid:#4a4a4a; --btn-dark:#2b2b2b; --btn-ledge:#161616; --btn-glow: rgba(110,110,110,0.6); }
+    .menu-btn.c-hold      { --btn-top:#7f95e8; --btn-mid:#5a6aa0; --btn-dark:#343d5f; --btn-ledge:#1c2133; --btn-glow: rgba(127,149,232,0.75); }
+    .menu-btn.c-return    { --btn-top:#7f95e8; --btn-mid:#5a6aa0; --btn-dark:#343d5f; --btn-ledge:#1c2133; --btn-glow: rgba(127,149,232,0.75); }
+    .menu-btn.c-inquiry   { --btn-top:#7f95e8; --btn-mid:#5a6aa0; --btn-dark:#343d5f; --btn-ledge:#1c2133; --btn-glow: rgba(127,149,232,0.75); }
+    .menu-btn.c-discount  { --btn-top:#f2cd6c; --btn-mid:#c99a2e; --btn-dark:#7a5c1a; --btn-ledge:#402f0d; --btn-glow: rgba(230,185,60,0.85); }
+    .menu-btn.c-discount .label { color: #000; text-shadow: none; }
+    .menu-btn.c-void      { --btn-top:#c23a2d; --btn-mid:#8f2318; --btn-dark:#4d130d; --btn-ledge:#280a06; --btn-glow: rgba(194,58,45,0.8); }
+    .menu-btn.c-opensale  { --btn-top:#f2cd6c; --btn-mid:#c99a2e; --btn-dark:#7a5c1a; --btn-ledge:#402f0d; --btn-glow: rgba(230,185,60,0.85); }
+    .menu-btn.c-opensale .label { color: #000; text-shadow: none; }
+    .menu-btn.c-voucher   { --btn-top:#f2cd6c; --btn-mid:#c99a2e; --btn-dark:#7a5c1a; --btn-ledge:#402f0d; --btn-glow: rgba(230,185,60,0.85); }
+    .menu-btn.c-voucher .label { color: #000; text-shadow: none; }
+    .menu-btn.c-cardsale  { --btn-top:#2f9e4f; --btn-mid:#1c6b34; --btn-dark:#12451f; --btn-ledge:#0a2712; --btn-glow: rgba(47,158,79,0.85); }
+    .menu-btn.c-cashsale  { --btn-top:#2f9e4f; --btn-mid:#1c6b34; --btn-dark:#12451f; --btn-ledge:#0a2712; --btn-glow: rgba(47,158,79,0.85); }
+
+    /* "Ready to take payment" pulse on CASH/CARD SALE while the cart has items */
+    @keyframes payAttnPulse {
+        0%, 100%  { transform: scale(1);     filter: brightness(1)    drop-shadow(0 0 0 transparent); }
+        50%       { transform: scale(1.07);  filter: brightness(1.35) drop-shadow(0 0 16px var(--btn-glow)); }
+    }
+
+    .menu-btn.pay-attn {
+        animation: payAttnPulse 0.85s ease-in-out infinite;
+    }
+
+
+    /* Till Login screen styles, shown first, dashboard revealed after login */
+
+    .login-container {
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 1.4vh 1.4vw;
+        gap: 1.2vh;
+        background:
+            radial-gradient(ellipse at 30% 20%, rgba(230,185,60,0.10), transparent 55%),
+            radial-gradient(ellipse at 80% 80%, rgba(230,185,60,0.08), transparent 55%),
+            var(--bg-black);
+        color: #fff;
+    }
+
+    /* Top-center error popup for wrong User ID / PIN */
+    .login-error-popup {
+        position: fixed;
+        top: 18px;
+        left: 50%;
+        transform: translateX(-50%) translateY(-14px);
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        gap: 0.6vw;
+        background: linear-gradient(to bottom, var(--red), var(--red-dark));
+        color: #fff;
+        font-weight: bold;
+        font-size: clamp(14px, 1.2vw, 18px);
+        letter-spacing: 0.3px;
+        padding: 1.1vh 1.6vw;
+        border-radius: 8px;
+        border: 1.5px solid #6e1c14;
+        box-shadow: 0 10px 26px rgba(0,0,0,0.5);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease, transform 0.25s ease;
+    }
+
+    .login-error-popup.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .login-error-popup .popup-icon {
+        width: clamp(18px, 1.6vw, 24px);
+        height: clamp(18px, 1.6vw, 24px);
+        flex: 0 0 auto;
+    }
+
+    /* Header: 3-column grid so the title stays centered regardless of side widths */
+    .login-header {
+        flex: 0 0 auto;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        padding: 1.2vh 0 1.5vh;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .login-header .login-title { order: 1; justify-self: start; }
+    .login-header .brand { order: 2; justify-self: center; }
+    .login-header .header-time { order: 3; justify-self: end; }
+
+    .brand {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Crops the AMSONS.png artwork down to just the "Amsons" wordmark */
+    .brand .logo-crop {
+        --logo-h: clamp(56px, 5.8vw, 88px);
+        height: var(--logo-h);
+        overflow: hidden;
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .brand .logo-crop img {
+        height: calc(var(--logo-h) * 2.276);
+        width: auto;
+        display: block;
+        margin-top: calc(var(--logo-h) * -0.289);
+    }
+
+    .login-title {
+        display: flex;
+        align-items: center;
+        gap: 0.8vw;
+    }
+
+    .login-title .lock-icon {
+        width: clamp(34px, 3vw, 46px);
+        height: clamp(34px, 3vw, 46px);
+        color: var(--gold);
+    }
+
+    .login-title h1 {
+        font-size: clamp(27px, 2.7vw, 39px);
+        color: var(--gold);
+        letter-spacing: 1px;
+    }
+
+    .login-title p {
+        font-size: clamp(13px, 1.1vw, 16px);
+        color: var(--text-muted);
+        margin-top: 0.2vh;
+    }
+
+    .header-time {
+        text-align: right;
+    }
+
+    .header-time .date {
+        font-size: clamp(14px, 1.2vw, 18px);
+        color: #e8e8e8;
+        letter-spacing: 1px;
+    }
+
+    .header-time .time {
+        font-size: clamp(29px, 2.7vw, 41px);
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .header-time .time .ampm {
+        font-size: clamp(14px, 1.2vw, 18px);
+        color: var(--gold);
+        font-weight: bold;
+        margin-left: 4px;
+    }
+
+    /* Main Body */
+    .login-body {
+        flex: 1 1 auto;
+        display: flex;
+        gap: 1.2vw;
+        min-height: 0;
+    }
+
+    .login-panel {
+        border: 1px solid var(--border-gold);
+        background: linear-gradient(160deg, #0a0a0a 0%, #000000 100%);
+        border-radius: 18px;
+    }
+
+    /* Left Panel (credentials form) */
+    .login-left-panel {
+        flex: 1 1 55%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.8vh 2.6vw;
+        gap: 1.2vh;
+    }
+
+    .avatar-circle {
+        width: clamp(56px, 6vw, 88px);
+        height: clamp(56px, 6vw, 88px);
+        border-radius: 50%;
+        border: 2px solid var(--gold);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .avatar-circle svg {
+        width: 55%;
+        height: 55%;
+        color: var(--gold);
+    }
+
+    /* Face ID avatar: pulses as a "tap to scan" control, shows the camera
+       feed inside this same circle when active */
+    #faceLoginAvatar {
+        width: clamp(132px, 14vw, 200px);
+        height: clamp(132px, 14vw, 200px);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        background: radial-gradient(circle at 45% 40%, #0a0a0a 0%, #000000 78%);
+        border-width: 3px;
+        animation: faceIdPulse 2.4s ease-in-out infinite;
+        transition: transform 0.15s;
+    }
+
+    #faceLoginAvatar:hover { transform: scale(1.04); }
+    #faceLoginAvatar:active { transform: scale(0.97); }
+
+    #faceLoginAvatar .face-photo,
+    #faceLoginAvatar video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    /* contain (not cover): shows the whole picture with nothing cut off */
+    #faceLoginAvatar .face-photo {
+        object-fit: contain;
+        animation: faceImgZoom 2.4s ease-in-out infinite;
+    }
+
+    @keyframes faceImgZoom {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.045); }
+    }
+
+    #faceLoginAvatar video {
+        object-fit: cover;
+    }
+
+    #faceLoginAvatar .inner-glow {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 42%, rgba(242,205,108,0.85) 0%, rgba(230,185,60,0.35) 35%, transparent 68%);
+        opacity: 0.18;
+        animation: faceInnerBlink 2.4s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 1;
+        mix-blend-mode: screen;
+    }
+
+    #faceLoginAvatar.active .inner-glow {
+        background: radial-gradient(circle at 50% 42%, rgba(150,255,170,0.85) 0%, rgba(69,193,105,0.35) 35%, transparent 68%);
+        animation-duration: 1s;
+    }
+
+    #faceLoginAvatar .scan-line {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 3px;
+        top: 4%;
+        background: linear-gradient(to right, transparent, var(--gold-light), transparent);
+        opacity: 0.85;
+        animation: faceScanSweep 2.4s ease-in-out infinite;
+        z-index: 2;
+    }
+
+    #faceLoginAvatar.active .scan-line {
+        background: linear-gradient(to right, transparent, var(--green-light), transparent);
+        animation-duration: 1s;
+    }
+
+    @keyframes faceIdPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(230,185,60,0.55); }
+        50% { box-shadow: 0 0 0 10px rgba(230,185,60,0); }
+    }
+
+    @keyframes faceInnerBlink {
+        0%, 100% { opacity: 0.15; }
+        50% { opacity: 0.8; }
+    }
+
+    @keyframes faceScanSweep {
+        0%, 100% { top: 6%; }
+        50% { top: 90%; }
+    }
+
+    .face-login-hint {
+        font-size: clamp(10px, 0.85vw, 12px);
+        color: var(--gold);
+        letter-spacing: 0.5px;
+        margin-top: -0.4vh;
+        text-align: center;
+    }
+
+    .face-login-hint.ok {
+        color: #45c169;
+        font-weight: bold;
+    }
+
+    .employee-label {
+        font-size: clamp(14px, 1.3vw, 19px);
+        font-weight: bold;
+        letter-spacing: 2px;
+        color: #fff;
+    }
+
+    .divider-line {
+        width: 100%;
+        height: 1px;
+        background: linear-gradient(to right, transparent, var(--border-gold), transparent);
+        margin-bottom: 0.4vh;
+    }
+
+    .form-fields {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.1vh;
+    }
+
+    .input-wrap {
+        position: relative;
+        width: 100%;
+    }
+
+    .input-wrap svg.field-icon {
+        position: absolute;
+        left: 1vw;
+        top: 50%;
+        transform: translateY(-50%);
+        width: clamp(16px, 1.3vw, 20px);
+        height: clamp(16px, 1.3vw, 20px);
+        color: var(--gold);
+    }
+
+    .input-wrap input {
+        width: 100%;
+        background: var(--panel-light);
+        border: 1px solid var(--border-gold);
+        border-radius: 10px;
+        padding: 1.1vh 2.6vw 1.1vh 2.8vw;
+        color: #fff;
+        font-size: clamp(13px, 1.05vw, 16px);
+        outline: none;
+    }
+
+    .input-wrap input::placeholder {
+        color: #7d7d82;
+    }
+
+    .input-wrap input:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 2px rgba(230,185,60,0.15);
+    }
+
+    /* Login screen only: bold label above each field, scoped under #loginScreen */
+    #loginScreen .form-fields {
+        width: 100%;
+        margin: 0 auto;
+        gap: 0.9vh;
+    }
+
+    #loginScreen .field-label {
+        font-size: clamp(11px, 0.95vw, 13px);
+        font-weight: bold;
+        letter-spacing: 1.5px;
+        color: var(--gold);
+    }
+
+    #loginScreen .input-wrap {
+        margin-bottom: 2vh;
+    }
+
+    #loginScreen .input-wrap input {
+        padding: 2vh 2.6vw 2vh 2.8vw;
+        font-size: clamp(17px, 1.4vw, 20px);
+    }
+
+    #loginScreen .login-btn {
+        padding: 1.4vh 0;
+        font-size: clamp(20px, 1.8vw, 25px);
+    }
+
+    #loginScreen .bottom-row {
+        gap: 1.6vw;
+        margin-top: 1.6vh;
+    }
+
+    /* User ID field: "AMS-" is a fixed, non-editable prefix, employee
+       only types the number. Border/background live on the wrapper
+       to the left of it. */
+    #loginScreen .input-wrap.id-wrap {
+        display: flex;
+        align-items: center;
+        background: var(--panel-light);
+        border: 1px solid var(--border-gold);
+        border-radius: 10px;
+        padding: 0 2.6vw 0 1vw;
+        transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    #loginScreen .input-wrap.id-wrap:focus-within {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 2px rgba(230,185,60,0.15);
+    }
+
+    #loginScreen .input-wrap.id-wrap .field-icon {
+        position: static;
+        transform: none;
+        flex: 0 0 auto;
+    }
+
+    #loginScreen .input-wrap.id-wrap .id-fixed {
+        font-weight: bold;
+        color: var(--gold);
+        font-size: clamp(17px, 1.4vw, 20px);
+        margin-left: 0.6vw;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+
+    #loginScreen .input-wrap.id-wrap input {
+        background: transparent;
+        border: none;
+        padding: 2vh 0 2vh 0.3vw;
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    #loginScreen .input-wrap.id-wrap input:focus {
+        box-shadow: none;
+    }
+
+    .input-wrap .toggle-eye {
+        position: absolute;
+        right: 1vw;
+        top: 50%;
+        transform: translateY(-50%);
+        width: clamp(18px, 1.4vw, 22px);
+        height: clamp(18px, 1.4vw, 22px);
+        color: var(--gold);
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+
+    .input-wrap .toggle-eye svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .login-btn {
+        width: 100%;
+        border: 1.5px solid #8a6a1c;
+        border-radius: 10px;
+        padding: 1.3vh 0;
+        font-size: clamp(16px, 1.4vw, 21px);
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: #1a1300;
+        background: linear-gradient(to bottom, var(--gold-light), var(--gold-dark));
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -3px 5px rgba(0,0,0,0.15), 0 7px 0 #8a6a1c, 0 12px 16px rgba(0,0,0,0.4);
+        transform: translateY(0);
+        transition: transform 0.08s, box-shadow 0.08s;
+    }
+
+    .login-btn:active {
+        transform: translateY(7px);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.3), 0 1px 0 #8a6a1c, 0 2px 3px rgba(0,0,0,0.25);
+    }
+
+    .login-btn.error {
+        animation: shake 0.35s;
+        background: linear-gradient(to bottom, #e0483a, #a52a1f);
+        color: #fff;
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-6px); }
+        75% { transform: translateX(6px); }
+    }
+
+    .bottom-row {
+        width: 100%;
+        display: flex;
+        gap: 0.8vw;
+    }
+
+    .ghost-btn {
+        flex: 1 1 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5vw;
+        background: linear-gradient(to bottom, #17181a, #0a0b0c);
+        border: 1.5px solid var(--border-gold);
+        border-radius: 10px;
+        padding: 0.95vh 0;
+        color: var(--gold);
+        font-size: clamp(11px, 0.95vw, 13px);
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 5px 0 #000, 0 9px 12px rgba(0,0,0,0.4);
+        transform: translateY(0);
+        transition: transform 0.08s, box-shadow 0.08s;
+    }
+
+    .ghost-btn svg {
+        width: clamp(16px, 1.3vw, 20px);
+        height: clamp(16px, 1.3vw, 20px);
+        color: var(--gold);
+    }
+
+    .ghost-btn:active {
+        background: linear-gradient(to bottom, #0a0b0c, #17181a);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 1px 0 #000;
+        transform: translateY(5px);
+    }
+
+    .conn-status {
+        text-align: center;
+        font-size: clamp(11px, 0.9vw, 14px);
+        color: var(--text-muted);
+        min-height: 2vh;
+    }
+
+    .conn-status.ok { color: #45c169; font-weight: bold; }
+
+    /* Right Panel: login keypad, renamed "login-*" to avoid colliding with the dashboard's classes */
+    .login-right-panel {
+        flex: 0 0 34%;
+        display: flex;
+        flex-direction: column;
+        padding: 1.3vh 1vw;
+        gap: 0.8vh;
+    }
+
+    .login-keypad-grid {
+        flex: 1 1 auto;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 1vh 1vw;
+        min-height: 0;
+    }
+
+    /* Same "puffy glossy clay" style as the dashboard's .key-btn: dark glass
+       keys with a gold border, pressing one fires a white "blink" */
+    .login-key-btn {
+        border: 1.5px solid var(--border-gold);
+        border-radius: 18%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 32% 26%, #2b2b2e 0%, #19191b 45%, #0a0a0b 100%);
+        color: var(--gold);
+        font-size: clamp(28px, 3.4vw, 48px);
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.08), inset 0 -7px 11px rgba(0,0,0,0.5), 0 0 10px rgba(230,185,60,0.45), 0 0 20px rgba(230,185,60,0.22), 0 7px 0 #4a3810, 0 12px 15px rgba(0,0,0,0.5);
+        transform: translateY(0);
+        transition: box-shadow 0.15s, transform 0.08s;
+    }
+
+    .login-key-btn:active {
+        transform: translateY(7px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.4), 0 0 14px rgba(230,185,60,0.65), 0 0 26px rgba(230,185,60,0.35), 0 1px 0 #4a3810, 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    /* White "blink": a bright glow radiating outward from the key, not a fill */
+    .login-key-btn::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+        box-shadow: 0 0 0 0 rgba(255,255,255,0);
+    }
+
+    @keyframes loginKeyBlink {
+        0%   { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        30%  { box-shadow: 0 0 24px 8px rgba(255,255,255,0.95); }
+        100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+    }
+
+    .login-key-btn.flash::after {
+        animation: loginKeyBlink 0.28s ease-out;
+    }
+
+    /* Backspace keeps the same dark/gold styling as digit keys */
+    .login-key-btn.del svg {
+        width: clamp(22px, 2vw, 30px);
+        height: clamp(22px, 2vw, 30px);
+    }
+
+    .login-key-btn.back {
+        background: radial-gradient(circle at 32% 26%, var(--gold-light) 0%, #dbaf3f 45%, var(--gold-dark) 100%);
+        color: #1a1300;
+        border-color: #8a6a1c;
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.7), inset 0 -7px 11px rgba(0,0,0,0.12), 0 0 5px rgba(230,185,60,0.3), 0 7px 0 #8a6a1c, 0 12px 15px rgba(0,0,0,0.35);
+        flex-direction: column;
+        gap: 4px;
+        font-size: clamp(13px, 1.1vw, 17px);
+    }
+
+    .login-key-btn.back:active {
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.2), 0 0 11px rgba(255,210,90,0.6), 0 0 22px rgba(255,210,90,0.3), 0 1px 0 #8a6a1c, 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    .login-key-btn.back svg {
+        width: clamp(18px, 1.6vw, 24px);
+        height: clamp(18px, 1.6vw, 24px);
+    }
+
+    .osk-btn {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6vw;
+        border: 1.5px solid var(--border-gold);
+        border-radius: 10px;
+        background: linear-gradient(to bottom, #17181a, #0a0b0c);
+        color: var(--gold);
+        font-size: clamp(11px, 0.95vw, 14px);
+        font-weight: bold;
+        letter-spacing: 0.5px;
+        padding: 1vh 0;
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 5px 0 #000, 0 9px 12px rgba(0,0,0,0.4);
+        transform: translateY(0);
+        transition: transform 0.08s, box-shadow 0.08s;
+    }
+
+    .osk-btn svg {
+        width: clamp(18px, 1.6vw, 24px);
+        height: clamp(18px, 1.6vw, 24px);
+    }
+
+    .osk-btn:active {
+        background: linear-gradient(to bottom, #0a0b0c, #17181a);
+        box-shadow: inset 0 2px 5px rgba(0,0,0,0.5), 0 1px 0 #000;
+        transform: translateY(5px);
+    }
+
+    /* Footer */
+    .login-footer {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 1vh;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        font-size: clamp(11px, 0.95vw, 14px);
+        color: var(--text-muted);
+    }
+
+    .login-footer .secure {
+        display: flex;
+        align-items: center;
+        gap: 0.5vw;
+    }
+
+    .login-footer svg {
+        width: clamp(15px, 1.2vw, 18px);
+        height: clamp(15px, 1.2vw, 18px);
+        color: var(--gold);
+    }
+
+    .login-footer .sep {
+        margin: 0 0.6vw;
+        color: rgba(255,255,255,0.2);
+    }
+
+    .login-footer .help {
+        display: flex;
+        align-items: center;
+        gap: 0.5vw;
+        cursor: pointer;
+    }
+
+    /* On-Screen Keyboard Overlay (login screen only) */
+    .osk-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 50;
+    }
+
+    .osk-overlay.open { display: flex; }
+
+    .osk-panel {
+        width: min(900px, 96vw);
+        margin-bottom: 2vh;
+        background: var(--panel);
+        border: 1px solid var(--border-gold);
+        border-radius: 10px;
+        padding: 1.4vh 1vw;
+        display: flex;
+        flex-direction: column;
+        gap: 0.7vh;
+    }
+
+    .osk-row {
+        display: flex;
+        gap: 0.4vw;
+        justify-content: center;
+    }
+
+    .osk-key {
+        flex: 1 1 0;
+        padding: 1.3vh 0;
+        text-align: center;
+        background: linear-gradient(to bottom, #2c2d33, #17181b);
+        border: 1.5px solid #000;
+        border-radius: 5px;
+        color: #fff;
+        font-size: clamp(13px, 1.15vw, 17px);
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 4px 0 #000, 0 6px 8px rgba(0,0,0,0.4);
+        transform: translateY(0);
+        transition: transform 0.08s, box-shadow 0.08s;
+    }
+
+    .osk-key:active {
+        background: #34363c;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 1px 0 #000;
+        transform: translateY(4px);
+    }
+
+    .osk-key.space { flex: 6 1 0; }
+    .osk-key.wide2 { flex: 2 1 0; color: var(--gold); }
+
+    /* Employee Registration screen styles */
+
+    .register-prompt {
+        text-align: center;
+        font-size: clamp(12px, 1vw, 15px);
+        color: var(--text-muted);
+        margin-top: 1vh;
+    }
+
+    .register-prompt .link-btn {
+        background: none;
+        border: none;
+        color: var(--gold);
+        font-weight: bold;
+        text-decoration: underline;
+        cursor: pointer;
+        font-size: inherit;
+        padding: 0;
+    }
+
+    .id-field-wrap {
+        width: 100%;
+    }
+
+    .id-label {
+        font-size: clamp(10px, 0.85vw, 12px);
+        color: var(--text-muted);
+        letter-spacing: 1px;
+        margin-bottom: 0.5vh;
+    }
+
+    .id-display {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.6vw;
+        background: var(--panel-light);
+        border: 1.5px solid var(--border-gold);
+        border-radius: 6px;
+        padding: 1.4vh 1vw;
+        box-sizing: border-box;
+    }
+
+    .id-display .id-key-icon {
+        width: clamp(16px, 1.3vw, 20px);
+        height: clamp(16px, 1.3vw, 20px);
+        color: var(--gold);
+        flex: 0 0 auto;
+    }
+
+    .id-display .id-prefix {
+        color: var(--gold);
+        font-weight: bold;
+        font-size: clamp(16px, 1.4vw, 20px);
+        letter-spacing: 1px;
+    }
+
+    .id-display .id-number {
+        color: #fff;
+        font-weight: bold;
+        font-size: clamp(16px, 1.4vw, 20px);
+        letter-spacing: 1px;
+    }
+
+    .id-display .id-lock {
+        margin-left: auto;
+        width: clamp(14px, 1.2vw, 18px);
+        height: clamp(14px, 1.2vw, 18px);
+        color: var(--gold);
+        opacity: 0.7;
+        flex: 0 0 auto;
+    }
+
+    .pin-hint {
+        font-size: clamp(9px, 0.8vw, 11px);
+        color: var(--text-muted);
+        margin-top: -0.8vh;
+        padding-left: 0.3vw;
+    }
+
+    .register-right-panel {
+        gap: 0.8vh;
+    }
+
+    .selfie-panel {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6vh;
+        width: 100%;
+    }
+
+    .selfie-box {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        background: #000;
+        border: 1.5px solid var(--border-gold);
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .selfie-box video,
+    .selfie-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .selfie-box .selfie-placeholder {
+        color: var(--text-muted);
+        font-size: clamp(11px, 0.95vw, 14px);
+        text-align: center;
+        padding: 1vw;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.8vh;
+    }
+
+    .selfie-box .selfie-placeholder svg {
+        width: clamp(30px, 3vw, 44px);
+        height: clamp(30px, 3vw, 44px);
+        color: var(--gold);
+        opacity: 0.6;
+    }
+
+    .selfie-hd-badge {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: rgba(0,0,0,0.6);
+        border: 1px solid var(--border-gold);
+        color: var(--gold);
+        font-size: 10px;
+        font-weight: bold;
+        padding: 1px 6px;
+        border-radius: 3px;
+        letter-spacing: 1px;
+    }
+
+    .selfie-btn-row {
+        display: flex;
+        gap: 0.6vw;
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .selfie-step-row {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4vh;
+        flex: 0 0 auto;
+    }
+
+    .selfie-step-text {
+        font-size: clamp(11px, 0.95vw, 14px);
+        color: var(--gold);
+        font-weight: bold;
+        letter-spacing: 0.3px;
+        text-align: center;
+    }
+
+    .selfie-dots {
+        display: flex;
+        gap: 0.4vw;
+    }
+
+    .selfie-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--panel-light);
+        border: 1.5px solid var(--border-gold);
+    }
+
+    .selfie-dot.done {
+        background: var(--gold);
+        border-color: var(--gold);
+    }
+
+    .btn-sm {
+        padding: 1.1vh 0;
+        font-size: clamp(12px, 1.05vw, 15px);
+    }
+
+    /* .login-key-btn is already sized to match, no extra sizing needed here */
+    .reg-keypad-grid {
+        flex: 0 0 34vh;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        gap: 1vh 1vw;
+    }
+
+    /* Shares its panel with the camera box above, so keys get a smaller font */
+    .reg-keypad-grid .login-key-btn {
+        font-size: clamp(22px, 2.4vw, 32px);
+    }
+
+    .reg-keypad-grid .login-key-btn.back {
+        font-size: clamp(11px, 1vw, 14px);
+    }
+
+    /* Choose Your Branch screen styles, reuses the login screen's dark look */
+
+    .branch-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3.4vh;
+    }
+
+    .branch-body {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2.2vw;
+        padding: 1vh 1vw 0;
+    }
+
+    .branch-subtitle {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: clamp(13px, 1.1vw, 16px);
+        letter-spacing: 1px;
+        margin-top: -0.6vh;
+    }
+
+    .branch-card {
+        flex: 0 1 26vw;
+        max-width: 380px;
+        min-width: 230px;
+        display: flex;
+        flex-direction: column;
+        border: 1.5px solid var(--border-gold);
+        border-radius: 12px;
+        background: var(--panel);
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 10px 0 #000, 0 16px 22px rgba(0,0,0,0.5);
+        transform: translateY(0);
+        transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    .branch-card:active {
+        transform: translateY(8px);
+        box-shadow: 0 2px 0 #000, 0 4px 8px rgba(0,0,0,0.4);
+    }
+
+    .branch-card .branch-img-wrap {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        overflow: hidden;
+        border-bottom: 1.5px solid var(--border-gold);
+        background: #000;
+    }
+
+    .branch-card .branch-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .branch-logout-wrap {
+        flex: 0 0 auto;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* Same "puffy glossy clay" gold treatment as the dashboard's BACK button */
+    .branch-logout-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6vw;
+        padding: 1.1vh 2.6vw;
+        border: none;
+        border-radius: 10px;
+        background: radial-gradient(circle at 32% 26%, var(--gold) 0%, var(--gold-dark) 45%, #8a6a1c 100%);
+        color: #1a1300;
+        font-weight: bold;
+        font-size: clamp(12px, 1vw, 15px);
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        box-shadow: inset 0 3px 5px rgba(255,255,255,0.45), inset 0 -7px 11px rgba(0,0,0,0.25), 0 0 5px rgba(0,0,0,0.3), 0 4px 0 #6b5015, 0 7px 9px rgba(0,0,0,0.4);
+        transform: translateY(0);
+        transition: transform 0.08s, box-shadow 0.08s;
+    }
+
+    .branch-logout-btn svg {
+        width: clamp(16px, 1.3vw, 20px);
+        height: clamp(16px, 1.3vw, 20px);
+    }
+
+    .branch-logout-btn:active {
+        transform: translateY(4px);
+        box-shadow: inset 0 2px 6px rgba(0,0,0,0.3), 0 0 11px rgba(255,210,90,0.6), 0 0 22px rgba(255,210,90,0.3), 0 1px 0 #6b5015, 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .branch-card .branch-label {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 2vh 1vw;
+        color: var(--gold);
+        font-weight: bold;
+        font-size: clamp(24px, 2.5vw, 34px);
+        letter-spacing: 0.5px;
+        line-height: 1.25;
+    }
+
+    /* ---- Receipt printing: a hidden top-level block, only shown to the
+       printer itself. #receiptPrintArea is filled with a fresh receipt
+       and printed via printReceipt() in js/dashboard.js right after a
+       CASH/CARD sale completes - see that function's own comment for the
+       silent (no dialog) printing setup this relies on. Sized for a small
+       58mm thermal roll (common small POS receipt printer width). ---- */
+    #receiptPrintArea { display: none; }
+
+    @media print {
+        body > *:not(#receiptPrintArea) { display: none !important; }
+        #receiptPrintArea { display: block !important; }
+
+        @page { size: 58mm auto; margin: 0; }
+
+        #receiptPrintArea {
+            width: 54mm;
+            padding: 2mm 2mm 6mm;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000;
+        }
+        #receiptPrintArea .rcpt-center { text-align: center; }
+        #receiptPrintArea .rcpt-shop { font-size: 15px; font-weight: bold; }
+        #receiptPrintArea .rcpt-rule { border-top: 1px dashed #000; margin: 3px 0; }
+        #receiptPrintArea .rcpt-row { display: flex; justify-content: space-between; gap: 4px; }
+        #receiptPrintArea .rcpt-item-name { flex: 1 1 auto; word-break: break-word; }
+        #receiptPrintArea .rcpt-total-row { font-weight: bold; font-size: 13px; }
+        #receiptPrintArea .rcpt-foot { margin-top: 6px; font-size: 10px; }
+    }
+</style>
+</head>
+<body>
+
+<!-- Icon sprite -->
+<svg style="position:absolute; width:0; height:0; overflow:hidden;">
+<defs>
+
+    <symbol id="i-till" viewBox="0 0 24 24">
+        <rect x="3" y="4" width="18" height="12" rx="1.5" fill="currentColor"/>
+        <rect x="5.2" y="6" width="13.6" height="7.4" rx="0.5" fill="#000"/>
+        <rect x="9" y="16.5" width="6" height="2" fill="currentColor"/>
+        <rect x="6" y="19" width="12" height="1.8" rx="0.9" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-person" viewBox="0 0 24 24">
+        <circle cx="12" cy="7.5" r="4" fill="currentColor"/>
+        <path d="M4 20.5c0-4.7 3.6-8.5 8-8.5s8 3.8 8 8.5" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-mosque" viewBox="0 0 24 24">
+        <circle cx="3.2" cy="6.4" r="0.9" fill="currentColor"/>
+        <rect x="2.5" y="7" width="1.4" height="9" fill="currentColor"/>
+        <path d="M1.6 16h2.2v3H1.6z" fill="currentColor"/>
+        <circle cx="20.8" cy="6.4" r="0.9" fill="currentColor"/>
+        <rect x="20.1" y="7" width="1.4" height="9" fill="currentColor"/>
+        <path d="M19.2 16h2.2v3h-2.2z" fill="currentColor"/>
+        <path d="M12 2.2c-2.6 2.4-3.7 5-3.9 6.8h7.8c-0.2-1.8-1.3-4.4-3.9-6.8z" fill="currentColor"/>
+        <circle cx="12" cy="2.3" r="0.7" fill="currentColor"/>
+        <rect x="5.6" y="9.4" width="12.8" height="9.6" fill="currentColor"/>
+        <path d="M10.6 19v-3.4a1.4 1.4 0 012.8 0V19z" fill="#000"/>
+        <rect x="4.6" y="18.8" width="14.8" height="1.6" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-gear" viewBox="0 0 24 24">
+        <path fill="currentColor" d="M12 8.4a3.6 3.6 0 100 7.2 3.6 3.6 0 000-7.2zm9 3.6a8.9 8.9 0 00-.15-1.6l1.9-1.5-1.9-3.3-2.25.75a9 9 0 00-2.75-1.6L15.4 2h-3.8l-.45 2.15a9 9 0 00-2.75 1.6L6.15 5 4.25 8.3l1.9 1.5a8.9 8.9 0 000 3.2l-1.9 1.5 1.9 3.3 2.25-.75a9 9 0 002.75 1.6L11.6 22h3.8l.45-2.15a9 9 0 002.75-1.6l2.25.75 1.9-3.3-1.9-1.5c.1-.5.15-1.05.15-1.6z"/>
+    </symbol>
+
+    <symbol id="i-pause" viewBox="0 0 24 24">
+        <rect x="6" y="5" width="4.2" height="14" rx="1" fill="currentColor"/>
+        <rect x="13.8" y="5" width="4.2" height="14" rx="1" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-undo" viewBox="0 0 24 24">
+        <path d="M6 8H4V3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4.2 8.6A8 8 0 1112 20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-search" viewBox="0 0 24 24">
+        <circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/>
+        <line x1="15.3" y1="15.3" x2="21" y2="21" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-percent" viewBox="0 0 24 24">
+        <circle cx="7" cy="7" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <circle cx="17" cy="17" r="3" fill="none" stroke="currentColor" stroke-width="2"/>
+        <line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-block" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <line x1="5.8" y1="18.2" x2="18.2" y2="5.8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-tag" viewBox="0 0 24 24">
+        <path d="M3 4h9l9 9-9 9-9-9z" fill="currentColor"/>
+        <circle cx="8" cy="9" r="1.6" fill="#000"/>
+    </symbol>
+
+    <symbol id="i-box" viewBox="0 0 24 24">
+        <path d="M3 8l9-5 9 5-9 5-9-5z" fill="currentColor"/>
+        <path d="M3 8v9l9 5v-9L3 8z" fill="currentColor" opacity="0.75"/>
+        <path d="M21 8v9l-9 5v-9l9-5z" fill="currentColor" opacity="0.55"/>
+    </symbol>
+
+    <symbol id="i-voucher" viewBox="0 0 24 24">
+        <rect x="2.5" y="6" width="19" height="12" rx="2" fill="currentColor"/>
+        <circle cx="2.5" cy="12" r="1.6" fill="var(--bg,#e9ecf1)"/>
+        <circle cx="21.5" cy="12" r="1.6" fill="var(--bg,#e9ecf1)"/>
+        <line x1="8.5" y1="7" x2="8.5" y2="17" stroke="#000" stroke-width="1.4" stroke-dasharray="2 2"/>
+    </symbol>
+
+    <symbol id="i-card" viewBox="0 0 24 24">
+        <rect x="2.5" y="5" width="19" height="14" rx="2" fill="currentColor"/>
+        <rect x="2.5" y="8.4" width="19" height="3.2" fill="#000"/>
+        <rect x="4.5" y="14.5" width="6" height="1.8" rx="0.9" fill="#fff"/>
+    </symbol>
+
+    <symbol id="i-cash" viewBox="0 0 24 24">
+        <rect x="2" y="6" width="20" height="12" rx="1.5" fill="currentColor"/>
+        <circle cx="12" cy="12" r="3" fill="#000"/>
+        <circle cx="4.6" cy="12" r="1" fill="#000"/>
+        <circle cx="19.4" cy="12" r="1" fill="#000"/>
+    </symbol>
+
+    <symbol id="i-arrow-left" viewBox="0 0 24 24">
+        <path d="M20 12H6" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M11 6l-6 6 6 6" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-backspace" viewBox="0 0 24 24">
+        <path d="M8 5h12a1 1 0 011 1v12a1 1 0 01-1 1H8l-6-7 6-7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="11.5" y1="9.5" x2="17.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <line x1="17.5" y1="9.5" x2="11.5" y2="14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-check" viewBox="0 0 24 24">
+        <path d="M4 12.5l5.2 5.2L20 6.2" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-keyboard" viewBox="0 0 24 24">
+        <rect x="2" y="6" width="20" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/>
+        <rect x="4.5" y="8.5" width="2" height="2" fill="currentColor"/>
+        <rect x="8" y="8.5" width="2" height="2" fill="currentColor"/>
+        <rect x="11.5" y="8.5" width="2" height="2" fill="currentColor"/>
+        <rect x="15" y="8.5" width="2" height="2" fill="currentColor"/>
+        <rect x="18.5" y="8.5" width="1.5" height="2" fill="currentColor"/>
+        <rect x="4.5" y="12" width="2" height="2" fill="currentColor"/>
+        <rect x="8" y="12" width="2" height="2" fill="currentColor"/>
+        <rect x="11.5" y="12" width="2" height="2" fill="currentColor"/>
+        <rect x="15" y="12" width="2" height="2" fill="currentColor"/>
+        <rect x="18.5" y="12" width="1.5" height="2" fill="currentColor"/>
+        <rect x="6" y="15" width="12" height="2" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-trash" viewBox="0 0 24 24">
+        <path d="M5 7h14l-1.2 13.2a1.5 1.5 0 01-1.5 1.3H7.7a1.5 1.5 0 01-1.5-1.3z" fill="currentColor"/>
+        <rect x="3" y="4.5" width="18" height="2" rx="1" fill="currentColor"/>
+        <rect x="9" y="2" width="6" height="2" rx="1" fill="currentColor"/>
+        <line x1="10" y1="9.5" x2="10" y2="18" stroke="#000" stroke-width="1.2"/>
+        <line x1="14" y1="9.5" x2="14" y2="18" stroke="#000" stroke-width="1.2"/>
+    </symbol>
+
+    <symbol id="i-logout" viewBox="0 0 24 24">
+        <path d="M9 4H5a1 1 0 00-1 1v14a1 1 0 001 1h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M14 8l5 4-5 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <line x1="19" y1="12" x2="9.5" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-lock" viewBox="0 0 24 24">
+        <rect x="4.5" y="10.5" width="15" height="10" rx="1.5" fill="currentColor"/>
+        <path d="M7.5 10.5V7.5a4.5 4.5 0 019 0v3" fill="none" stroke="currentColor" stroke-width="2.2"/>
+        <circle cx="12" cy="15" r="1.6" fill="#000"/>
+        <rect x="11.2" y="15.5" width="1.6" height="2.6" fill="#000"/>
+    </symbol>
+
+    <!-- Category icons -->
+    <symbol id="i-blackseed" viewBox="0 0 48 48">
+        <rect x="17" y="4" width="14" height="6" rx="1.5" fill="#1c1c1c"/>
+        <ellipse cx="24" cy="4" rx="4" ry="2" fill="#e77aa0"/>
+        <path d="M16 12h16l2 5v25a3 3 0 01-3 3H17a3 3 0 01-3-3V17z" fill="#f6f2e9" stroke="#333" stroke-width="1.2"/>
+        <rect x="14.5" y="24" width="19" height="10" fill="#1c1c1c"/>
+        <rect x="14.5" y="24" width="19" height="10" fill="none" stroke="#333" stroke-width="1"/>
+        <text x="24" y="31.2" font-size="6" fill="#e6b93c" text-anchor="middle" font-weight="bold">BS</text>
+    </symbol>
+
+    <symbol id="i-menitems" viewBox="0 0 48 48">
+        <path d="M17 6l-4.5 2.5L8 14l4 6 4.5-2.3V40h15V17.7L36 20l4-6-4.5-5.5L31 6l-3 3a4 4 0 01-8 0z" fill="#2f6da8" stroke="#1c4a78" stroke-width="1.2"/>
+    </symbol>
+
+    <symbol id="i-womenitems" viewBox="0 0 48 48">
+        <circle cx="24" cy="10" r="4" fill="#f3c9dc" stroke="#8f3a68" stroke-width="1.2"/>
+        <path d="M24 14c-3 0-5.5 2-6 5l-6 21h24l-6-21c-0.5-3-3-5-6-5z" fill="#c65b95" stroke="#8f3a68" stroke-width="1.2"/>
+    </symbol>
+
+    <symbol id="i-trending" viewBox="0 0 48 48">
+        <path d="M6 34l11-11 8 8 15-15" fill="none" stroke="#e6b93c" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M31 14h11v11" fill="none" stroke="#e6b93c" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-opensale" viewBox="0 0 48 48">
+        <path d="M6 8h18l18 18-18 18L6 26z" fill="#143a68"/>
+        <circle cx="15" cy="17" r="3.2" fill="#fff"/>
+        <path d="M30 30l9 9 2.3-2.3-3.2-3.2 4-1.5-12-4.5z" fill="#e6b93c"/>
+    </symbol>
+
+    <!-- Icons used only by the Till Login screen -->
+    <symbol id="i-key" viewBox="0 0 24 24">
+        <circle cx="7" cy="14" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M10.5 11.5L20 2M17 5l2.5 2.5M14 8l2 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-eye" viewBox="0 0 24 24">
+        <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-eye-off" viewBox="0 0 24 24">
+        <path d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="12" r="3" fill="currentColor"/>
+        <line x1="3" y1="21" x2="21" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-wifi" viewBox="0 0 24 24">
+        <path d="M2 8.5a15 15 0 0120 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M5.5 12.5a10 10 0 0113 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M9 16.3a5 5 0 016 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="19.5" r="1.4" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-shield" viewBox="0 0 24 24">
+        <path d="M12 2l8 3.2v6c0 5-3.4 8.7-8 10.8-4.6-2.1-8-5.8-8-10.8v-6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8.5 12.2l2.4 2.4 4.6-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-help" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M9.3 9.3a2.7 2.7 0 115 1.5c0 1.7-2.5 1.7-2.5 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="12" cy="17.2" r="1" fill="currentColor"/>
+    </symbol>
+
+    <!-- Icons used only by the Employee Registration screen -->
+    <symbol id="i-camera" viewBox="0 0 24 24">
+        <path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 011 1v11a1 1 0 01-1 1H4a1 1 0 01-1-1V8a1 1 0 011-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        <circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+
+    <symbol id="i-mail" viewBox="0 0 24 24">
+        <rect x="2.5" y="5" width="19" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M3 6.5l9 7 9-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <!-- Icons used only by the SETTINGS popup's function grid -->
+    <symbol id="i-grid" viewBox="0 0 24 24">
+        <rect x="3" y="3" width="8" height="8" rx="1.5" fill="currentColor"/>
+        <rect x="13" y="3" width="8" height="8" rx="1.5" fill="currentColor"/>
+        <rect x="3" y="13" width="8" height="8" rx="1.5" fill="currentColor"/>
+        <rect x="13" y="13" width="8" height="8" rx="1.5" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-power" viewBox="0 0 24 24">
+        <line x1="12" y1="3" x2="12" y2="11" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M6.8 6.3a8 8 0 1010.4 0" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+    </symbol>
+
+    <symbol id="i-wrench" viewBox="0 0 24 24">
+        <path d="M14.7 6.3a4.5 4.5 0 00-6.1 5.7L3 17.6 6.4 21l5.6-5.6a4.5 4.5 0 005.7-6.1l-3.2 3.2-2.6-.9-.9-2.6z" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-chart" viewBox="0 0 24 24">
+        <rect x="4" y="13" width="3.5" height="7" rx="0.8" fill="currentColor"/>
+        <rect x="10.2" y="8" width="3.5" height="12" rx="0.8" fill="currentColor"/>
+        <rect x="16.4" y="4" width="3.5" height="16" rx="0.8" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/>
+        <path d="M12 7v5.5l4 2.3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-printer" viewBox="0 0 24 24">
+        <rect x="6" y="3" width="12" height="6" fill="currentColor"/>
+        <rect x="3" y="9" width="18" height="8" rx="1.5" fill="currentColor"/>
+        <rect x="6" y="14" width="12" height="7" fill="#000"/>
+        <rect x="7.2" y="15.2" width="9.6" height="4.6" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-dots" viewBox="0 0 24 24">
+        <circle cx="5" cy="12" r="2.2" fill="currentColor"/>
+        <circle cx="12" cy="12" r="2.2" fill="currentColor"/>
+        <circle cx="19" cy="12" r="2.2" fill="currentColor"/>
+    </symbol>
+
+    <symbol id="i-coins" viewBox="0 0 24 24">
+        <ellipse cx="9" cy="16" rx="6.5" ry="3" fill="currentColor"/>
+        <ellipse cx="9" cy="12.2" rx="6.5" ry="3" fill="currentColor" opacity="0.85"/>
+        <ellipse cx="9" cy="8.4" rx="6.5" ry="3" fill="currentColor" opacity="0.7"/>
+        <path d="M18 2.5v6M15 5.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Icons used only by the TILL READINGS popup -->
+    <symbol id="i-receipt-x" viewBox="0 0 24 24">
+        <path d="M5 2.5h14v16.5l-1.4-1-1.4 1-1.4-1-1.4 1-1.4-1-1.4 1-1.4-1-1.4 1-1.4-1-1.4 1V2.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <line x1="7.5" y1="6.5" x2="16.5" y2="6.5" stroke="currentColor" stroke-width="1.2"/>
+        <line x1="7.5" y1="9.3" x2="16.5" y2="9.3" stroke="currentColor" stroke-width="1.2"/>
+        <text x="12" y="16.3" font-size="8" font-weight="bold" text-anchor="middle" fill="currentColor">X</text>
+    </symbol>
+
+    <symbol id="i-receipt-z" viewBox="0 0 24 24">
+        <path d="M5 2.5h14v16.5l-1.4-1-1.4 1-1.4-1-1.4 1-1.4-1-1.4 1-1.4-1-1.4 1-1.4-1-1.4 1V2.5z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <line x1="7.5" y1="6.5" x2="16.5" y2="6.5" stroke="currentColor" stroke-width="1.2"/>
+        <line x1="7.5" y1="9.3" x2="16.5" y2="9.3" stroke="currentColor" stroke-width="1.2"/>
+        <text x="12" y="16.3" font-size="8" font-weight="bold" text-anchor="middle" fill="currentColor">Z</text>
+    </symbol>
+
+    <symbol id="i-receipt-z-reprint" viewBox="0 0 24 24">
+        <path d="M4 2.5h12v14l-1.2-.9-1.2.9-1.2-.9-1.2.9-1.2-.9-1.2.9-1.2-.9-1.2.9-1.2-.9-1.2.9V2.5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <line x1="6.2" y1="6" x2="13.8" y2="6" stroke="currentColor" stroke-width="1.1"/>
+        <text x="10" y="13.8" font-size="6.5" font-weight="bold" text-anchor="middle" fill="currentColor">Z</text>
+        <path d="M15.6 14.3a4 4 0 10-1 3.9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <path d="M13.9 16l.7 2.2 2.2-.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </symbol>
+
+    <symbol id="i-report" viewBox="0 0 24 24">
+        <path d="M6 2.5h9l3.5 3.5v15.5H6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <path d="M15 2.5v3.5h3.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+        <rect x="8.3" y="14" width="2" height="4.5" fill="currentColor"/>
+        <rect x="11.3" y="11.5" width="2" height="7" fill="currentColor"/>
+        <rect x="14.3" y="9" width="2" height="9.5" fill="currentColor"/>
+    </symbol>
+
+</defs>
+</svg>
+
+<!-- TILL LOGIN SCREEN: shown first, hidden after login when the dashboard appears -->
+<div id="loginScreen" class="login-container">
+    <!-- Top-center error popup (wrong User ID / PIN) -->
+    <div class="login-error-popup" id="loginErrorPopup">
+        <svg class="popup-icon"><use href="#i-block"/></svg>
+        <span id="loginErrorText"></span>
+    </div>
+
+    <!-- Header -->
+    <div class="login-header">
+        <div class="brand">
+            <div class="logo-crop">
+                <img src="AMSONS.png" alt="Amsons">
+            </div>
+        </div>
+
+        <div class="login-title">
+            <svg class="lock-icon"><use href="#i-lock"/></svg>
+            <div>
+                <h1>TILL LOGIN</h1>
+                <p>Please enter your credentials</p>
+            </div>
+        </div>
+
+        <div class="header-time">
+            <div class="date" id="loginDate"></div>
+            <div class="time" id="loginTime"></div>
+        </div>
+    </div>
+
+    <!-- Main Body -->
+    <div class="login-body">
+        <!-- Left Panel: credentials form -->
+        <div class="login-panel login-left-panel">
+            <div class="avatar-circle" id="faceLoginAvatar" title="Tap to log in with Face ID">
+                <img class="face-photo" id="faceLoginImg" src="amFace_avatar.png" alt="Face ID">
+                <video id="faceLoginVideo" autoplay playsinline muted style="display:none;"></video>
+                <span class="inner-glow"></span>
+                <span class="scan-line"></span>
+            </div>
+            <div class="face-login-hint" id="faceLoginHint">TAP FOR FACE ID LOGIN</div>
+            <div class="employee-label">EMPLOYEE LOGIN</div>
+            <div class="divider-line"></div>
+
+            <form class="form-fields" id="loginForm" autocomplete="off">
+                <div class="field-label">USER ID</div>
+                <div class="input-wrap id-wrap">
+                    <svg class="field-icon"><use href="#i-person"/></svg>
+                    <span class="id-fixed">AMS-</span>
+                    <input type="text" id="username" placeholder="4-Digit ID" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+                </div>
+                <div class="field-label">PIN</div>
+                <div class="input-wrap">
+                    <svg class="field-icon"><use href="#i-key"/></svg>
+                    <input type="password" id="password" placeholder="4-Digit PIN" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+                    <button type="button" class="toggle-eye" id="toggleEye">
+                        <svg id="eyeIcon"><use href="#i-eye"/></svg>
+                    </button>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
+            </form>
+
+            <div class="bottom-row">
+                <button class="ghost-btn" id="exitBtn" type="button"><svg><use href="#i-logout"/></svg>EXIT</button>
+                <button class="ghost-btn" id="testConnBtn" type="button"><svg><use href="#i-wifi"/></svg>TEST CONNECTION</button>
+            </div>
+            <div class="conn-status" id="connStatus"></div>
+
+            <div class="register-prompt">
+                Haven't registered yet? <button type="button" class="link-btn" id="goRegisterBtn">Register here</button>
+            </div>
+        </div>
+
+        <!-- Right Panel: login keypad -->
+        <div class="login-panel login-right-panel">
+            <div class="login-keypad-grid">
+                <button class="login-key-btn num" type="button">1</button>
+                <button class="login-key-btn num" type="button">2</button>
+                <button class="login-key-btn num" type="button">3</button>
+                <button class="login-key-btn num" type="button">4</button>
+                <button class="login-key-btn num" type="button">5</button>
+                <button class="login-key-btn num" type="button">6</button>
+                <button class="login-key-btn num" type="button">7</button>
+                <button class="login-key-btn num" type="button">8</button>
+                <button class="login-key-btn num" type="button">9</button>
+                <button class="login-key-btn del" type="button"><svg><use href="#i-backspace"/></svg></button>
+                <button class="login-key-btn num" type="button">0</button>
+                <button class="login-key-btn back" id="loginBackBtn" type="button"><svg><use href="#i-arrow-left"/></svg>BACK</button>
+            </div>
+            <button class="osk-btn" id="oskBtn" type="button"><svg><use href="#i-keyboard"/></svg>ON SCREEN KEYBOARD</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+        <div class="secure">
+            <svg><use href="#i-shield"/></svg>
+            <span>Secure System</span>
+            <span class="sep">|</span>
+            <span>Amsons Retail POS</span>
+        </div>
+        <div class="help">
+            <svg><use href="#i-help"/></svg>
+            <span>Need Help?</span>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- EMPLOYEE REGISTRATION SCREEN: opened from the login screen's "Register here" link -->
+<div id="registerScreen" class="login-container" style="display:none;">
+    <!-- Header -->
+    <div class="login-header">
+        <div class="brand">
+            <div class="logo-crop">
+                <img src="AMSONS.png" alt="Amsons">
+            </div>
+        </div>
+
+        <div class="login-title">
+            <svg class="lock-icon"><use href="#i-person"/></svg>
+            <div>
+                <h1>EMPLOYEE REGISTRATION</h1>
+                <p>Create your till account</p>
+            </div>
+        </div>
+
+        <div class="header-time">
+            <div class="date"></div>
+            <div class="time"></div>
+        </div>
+    </div>
+
+    <!-- Main Body -->
+    <div class="login-body">
+        <!-- Left Panel: registration form -->
+        <div class="login-panel login-left-panel">
+            <div class="avatar-circle">
+                <svg><use href="#i-person"/></svg>
+            </div>
+            <div class="employee-label">NEW EMPLOYEE</div>
+            <div class="divider-line"></div>
+
+            <form class="form-fields" id="registerForm" autocomplete="off">
+                <div class="id-field-wrap">
+                    <div class="id-label">EMPLOYEE ID (AUTO-GENERATED)</div>
+                    <div class="id-display">
+                        <svg class="id-key-icon"><use href="#i-key"/></svg>
+                        <span class="id-prefix">AMS-</span><span class="id-number" id="regIdNumber">0001</span>
+                        <svg class="id-lock"><use href="#i-lock"/></svg>
+                    </div>
+                </div>
+
+                <div class="input-wrap">
+                    <svg class="field-icon"><use href="#i-person"/></svg>
+                    <input type="text" id="regName" placeholder="Full Name">
+                </div>
+
+                <div class="input-wrap">
+                    <svg class="field-icon"><use href="#i-mail"/></svg>
+                    <input type="email" id="regEmail" placeholder="Email Address">
+                </div>
+
+                <div class="input-wrap">
+                    <svg class="field-icon"><use href="#i-key"/></svg>
+                    <input type="password" id="regPassword" placeholder="4-Digit Password" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+                    <button type="button" class="toggle-eye" id="regToggleEye1">
+                        <svg id="regEyeIcon1"><use href="#i-eye"/></svg>
+                    </button>
+                </div>
+                <div class="pin-hint">Must be exactly 4 digits</div>
+
+                <div class="input-wrap">
+                    <svg class="field-icon"><use href="#i-key"/></svg>
+                    <input type="password" id="regConfirmPassword" placeholder="Confirm Password" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+                    <button type="button" class="toggle-eye" id="regToggleEye2">
+                        <svg id="regEyeIcon2"><use href="#i-eye"/></svg>
+                    </button>
+                </div>
+
+                <button type="submit" class="login-btn" id="registerBtn">REGISTER</button>
+            </form>
+
+            <div class="bottom-row">
+                <button class="ghost-btn" id="backToLoginBtn" type="button"><svg><use href="#i-arrow-left"/></svg>BACK TO LOGIN</button>
+            </div>
+            <div class="conn-status" id="registerStatus"></div>
+        </div>
+
+        <!-- Right Panel: selfie camera + PIN keypad -->
+        <div class="login-panel login-right-panel register-right-panel">
+            <div class="selfie-panel">
+                <div class="id-label">FACE ID SETUP <span style="color:var(--gold);">(5 PHOTOS)</span></div>
+                <div class="selfie-box" id="selfieBox">
+                    <div class="selfie-placeholder" id="selfiePlaceholder">
+                        <svg><use href="#i-camera"/></svg>
+                        <span>Camera preview will appear here</span>
+                    </div>
+                    <video id="selfieVideo" autoplay playsinline muted style="display:none;"></video>
+                    <img id="selfieImg" style="display:none;" alt="Selfie preview">
+                    <span class="selfie-hd-badge">HD</span>
+                </div>
+                <div class="selfie-step-row" id="selfieStepRow" style="display:none;">
+                    <span class="selfie-step-text" id="selfieStepText"></span>
+                    <div class="selfie-dots" id="selfieDots"></div>
+                </div>
+                <div class="selfie-btn-row" id="startRow">
+                    <button type="button" class="login-btn btn-sm" id="startCameraBtn">
+                        <svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:6px;"><use href="#i-camera"/></svg>START FACE SCAN
+                    </button>
+                </div>
+                <div class="selfie-btn-row" id="captureRow" style="display:none;">
+                    <button type="button" class="login-btn btn-sm" id="captureBtn">CAPTURE PHOTO</button>
+                </div>
+                <div class="selfie-btn-row" id="retakeRow" style="display:none;">
+                    <button type="button" class="ghost-btn btn-sm" id="retakeBtn"><svg><use href="#i-undo"/></svg>RETAKE ALL</button>
+                </div>
+                <div class="conn-status" id="cameraStatus"></div>
+            </div>
+
+            <div class="login-keypad-grid reg-keypad-grid">
+                <button class="login-key-btn num" type="button">1</button>
+                <button class="login-key-btn num" type="button">2</button>
+                <button class="login-key-btn num" type="button">3</button>
+                <button class="login-key-btn num" type="button">4</button>
+                <button class="login-key-btn num" type="button">5</button>
+                <button class="login-key-btn num" type="button">6</button>
+                <button class="login-key-btn num" type="button">7</button>
+                <button class="login-key-btn num" type="button">8</button>
+                <button class="login-key-btn num" type="button">9</button>
+                <button class="login-key-btn del" type="button"><svg><use href="#i-backspace"/></svg></button>
+                <button class="login-key-btn num" type="button">0</button>
+                <button class="login-key-btn back" type="button"><svg><use href="#i-arrow-left"/></svg>CLEAR</button>
+            </div>
+            <button class="osk-btn" id="regOskBtn" type="button"><svg><use href="#i-keyboard"/></svg>ON SCREEN KEYBOARD</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+        <div class="secure">
+            <svg><use href="#i-shield"/></svg>
+            <span>Secure System</span>
+            <span class="sep">|</span>
+            <span>Amsons Retail POS</span>
+        </div>
+        <div class="help">
+            <svg><use href="#i-help"/></svg>
+            <span>Need Help?</span>
+        </div>
+    </div>
+</div>
+
+<!-- CHOOSE YOUR BRANCH SCREEN: shown right after login -->
+<div id="branchScreen" class="login-container" style="display:none;">
+    <!-- Header -->
+    <div class="login-header">
+        <div class="brand">
+            <div class="logo-crop">
+                <img src="AMSONS.png" alt="Amsons">
+            </div>
+        </div>
+
+        <div class="login-title">
+            <svg class="lock-icon"><use href="#i-shield"/></svg>
+            <div>
+                <h1>CHOOSE YOUR BRANCH</h1>
+                <p>Select the till location to continue</p>
+            </div>
+        </div>
+
+        <div class="header-time">
+            <div class="date"></div>
+            <div class="time"></div>
+        </div>
+    </div>
+
+    <!-- Branch cards + Logout, centered together as one group -->
+    <div class="branch-content">
+        <div class="branch-body">
+            <div class="branch-card" data-badge="SMALL HEATH">
+                <div class="branch-img-wrap"><img src="amsonsSmallHeath.jpg" alt="Small Heath Branch"></div>
+                <div class="branch-label">Small Heath</div>
+            </div>
+            <div class="branch-card" data-badge="ALUM ROCK">
+                <div class="branch-img-wrap"><img src="amsonsAlumrock.webp" alt="Alum Rock Branch"></div>
+                <div class="branch-label">Alum Rock</div>
+            </div>
+            <div class="branch-card" data-badge="BRADFORD">
+                <div class="branch-img-wrap"><img src="amsonsBradford.webp" alt="Bradford Branch"></div>
+                <div class="branch-label">Bradford</div>
+            </div>
+        </div>
+
+        <div class="branch-logout-wrap">
+            <button class="branch-logout-btn" id="branchLogoutBtn" type="button">
+                <svg><use href="#i-logout"/></svg>LOGOUT
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="login-footer">
+        <div class="secure">
+            <svg><use href="#i-shield"/></svg>
+            <span>Secure System</span>
+            <span class="sep">|</span>
+            <span>Amsons Retail POS</span>
+        </div>
+        <div class="help">
+            <svg><use href="#i-help"/></svg>
+            <span>Need Help?</span>
+        </div>
+    </div>
+</div>
+
+<!-- On-Screen Keyboard Overlay (shared by the Login and Register screens) -->
+<div class="osk-overlay" id="oskOverlay">
+    <div class="osk-panel">
+        <div class="osk-row">
+            <button class="osk-key">1</button><button class="osk-key">2</button><button class="osk-key">3</button>
+            <button class="osk-key">4</button><button class="osk-key">5</button><button class="osk-key">6</button>
+            <button class="osk-key">7</button><button class="osk-key">8</button><button class="osk-key">9</button>
+            <button class="osk-key">0</button>
+        </div>
+        <div class="osk-row">
+            <button class="osk-key">q</button><button class="osk-key">w</button><button class="osk-key">e</button>
+            <button class="osk-key">r</button><button class="osk-key">t</button><button class="osk-key">y</button>
+            <button class="osk-key">u</button><button class="osk-key">i</button><button class="osk-key">o</button>
+            <button class="osk-key">p</button>
+        </div>
+        <div class="osk-row">
+            <button class="osk-key">a</button><button class="osk-key">s</button><button class="osk-key">d</button>
+            <button class="osk-key">f</button><button class="osk-key">g</button><button class="osk-key">h</button>
+            <button class="osk-key">j</button><button class="osk-key">k</button><button class="osk-key">l</button>
+        </div>
+        <div class="osk-row">
+            <button class="osk-key">z</button><button class="osk-key">x</button><button class="osk-key">c</button>
+            <button class="osk-key">v</button><button class="osk-key">b</button><button class="osk-key">n</button>
+            <button class="osk-key">m</button><button class="osk-key">@</button><button class="osk-key">.</button>
+            <button class="osk-key wide2" data-action="back"><svg style="width:18px;height:18px;display:inline-block;vertical-align:middle;"><use href="#i-backspace"/></svg></button>
+        </div>
+        <div class="osk-row">
+            <button class="osk-key wide2" data-action="close">CLOSE</button>
+            <button class="osk-key space" data-action="space">SPACE</button>
+            <button class="osk-key wide2" data-action="done">DONE</button>
+        </div>
+    </div>
+</div>
+
+<!-- Category product picker, populated live from Lightspeed -->
+<div class="cat-picker-overlay" id="catPickerOverlay">
+    <div class="cat-picker-panel">
+        <div class="cat-picker-header">
+            <span id="catPickerTitle">Category</span>
+            <button type="button" class="cat-picker-close" id="catPickerCloseBtn">✕</button>
+        </div>
+        <div class="cat-picker-grid gold-scroll" id="catPickerGrid"></div>
+    </div>
+</div>
+
+<!-- Generic sidebar-action modal, shared by DISCOUNT/HOLD/OPEN SALE/RETURN/INQUIRY/VOUCHER/SETTINGS -->
+<div class="cat-picker-overlay" id="actionModalOverlay">
+    <div class="cat-picker-panel">
+        <div class="cat-picker-header">
+            <span id="actionModalTitle">Action</span>
+            <button type="button" class="cat-picker-close" id="actionModalCloseBtn">✕</button>
+        </div>
+        <div class="gold-scroll" id="actionModalBody" style="overflow-y:auto;"></div>
+    </div>
+</div>
+
+<!-- VOUCHER's "ADD CREDIT" option: a black-and-gold store-credit card visual for
+     customers who return goods without exchanging them. Purely visual/printable -
+     no balance is stored or redeemable in the system. -->
+<div class="credit-card-overlay" id="creditCardOverlay">
+    <div class="credit-card-panel">
+        <button type="button" class="credit-card-close" id="creditCardCloseBtn">✕</button>
+        <div class="store-credit-card">
+            <div class="scc-chip"></div>
+            <img class="scc-logo" src="../Amsons_transparent.png" alt="Amsons">
+            <div class="scc-footer">
+                <div class="scc-title">Store Credit</div>
+                <div class="scc-serial" id="creditCardSerial">0000 0000 0000</div>
+            </div>
+        </div>
+        <div class="credit-card-amount-row">
+            <label for="creditCardAmountInput">Credit Value</label>
+            <input class="am-field" id="creditCardAmountInput" inputmode="decimal" placeholder="0.00">
+        </div>
+        <button type="button" class="am-btn primary" id="creditCardDoneBtn">DONE</button>
+    </div>
+</div>
+
+<!-- Sidebar DISCOUNT button's popup: every Promotion currently running in Lightspeed
+     (Setup > Promotions), read-only - see the .c-discount click handler in dashboard.js -->
+<div class="cat-picker-overlay" id="promotionsPopupOverlay">
+    <div class="cat-picker-panel">
+        <div class="cat-picker-header">
+            <span>Promotions</span>
+            <button type="button" class="cat-picker-close" id="promotionsPopupCloseBtn">✕</button>
+        </div>
+        <div class="am-list gold-scroll" id="promotionsPopupList"></div>
+    </div>
+</div>
+
+<!-- BULLETIN card's popup: today's full weather forecast + sales-outlook,
+     opened by clicking #weatherCard - see renderWeatherPopup() in dashboard.js -->
+<div class="cat-picker-overlay" id="weatherPopupOverlay">
+    <div class="cat-picker-panel">
+        <div class="cat-picker-header">
+            <span>Today's Forecast &amp; Sales Outlook</span>
+            <button type="button" class="cat-picker-close" id="weatherPopupCloseBtn">✕</button>
+        </div>
+        <div class="weather-popup-body gold-scroll" id="weatherPopupBody"></div>
+    </div>
+</div>
+
+<!-- Sidebar INVENTORY button's popup: opens the inventory dashboard here via a
+     one-time handoff token, so the till underneath stays open -->
+<div class="inventory-popup-overlay" id="inventoryPopupOverlay">
+    <div class="inventory-popup-panel" id="inventoryPopupPanel">
+        <div class="inventory-popup-header">
+            <span>Inventory</span>
+            <button type="button" class="inventory-popup-close" id="inventoryPopupCloseBtn" title="Back to Till">✕</button>
+        </div>
+        <iframe id="inventoryPopupIframe" title="Amsons Inventory"></iframe>
+    </div>
+</div>
+
+<!-- TILL DASHBOARD SCREEN: revealed after a valid login -->
+<div id="dashboardScreen" class="pos-container" style="display:none;">
+    <div class="till-toast" id="tillToast"></div>
+    <div class="alarm-flash" id="alarmFlash"></div>
+    <input type="text" id="scanCaptureInput" class="scan-capture" autocomplete="off" inputmode="none" tabindex="-1">
+
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-left">
+            <div class="till-block">
+                <svg class="icon-gold"><use href="#i-till"/></svg>
+                <div>
+                    <div class="till-num" id="tillNumLabel">TILL # 1</div>
+                    <div class="till-underline"></div>
+                </div>
+            </div>
+            <div class="divider"></div>
+            <div class="admin-block">
+                <svg class="icon-gold"><use href="#i-person"/></svg>
+                <div>
+                    <div class="admin-label">TILL ADMIN</div>
+                    <div class="admin-name">REHAN</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="topbar-center">
+            <div class="logo-crop">
+                <img class="amsons-logo" src="AMSONS.png" alt="Amsons">
+            </div>
+            <span class="alumrock-box">ALUMROCK</span>
+        </div>
+
+        <div class="topbar-right">
+            <div class="mode-row">
+                <div class="mode-label">TILL MODE</div>
+                <div class="mode-badge" id="modeBadge">NORMAL</div>
+            </div>
+            <div class="header-time">
+                <div class="date"></div>
+                <div class="time"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Body -->
+    <div class="main-body">
+        <div class="left-area">
+            <input class="invoice-search" placeholder="New Invoice ..." readonly>
+
+            <div class="cards-grid">
+                <div class="info-card" id="dataInputCard">
+                    <div class="card-label">DATA INPUT</div>
+                    <div class="card-value" id="dataInputValue"></div>
+                </div>
+                <div class="info-card" id="priceCard">
+                    <div class="card-label">PRICE</div>
+                    <div class="card-value" id="priceValue">0.00</div>
+                </div>
+                <div class="info-card">
+                    <div class="card-label">TOTAL QTY</div>
+                    <div class="card-value" id="totalQtyValue">0</div>
+                </div>
+                <div class="info-card">
+                    <div class="card-label">TOTAL ITEMS</div>
+                    <div class="card-value" id="totalItemsValue">0</div>
+                </div>
+            </div>
+
+            <div class="table-row">
+                <div class="item-table-wrap gold-scroll">
+                    <table class="item-table">
+                        <thead>
+                            <tr>
+                                <th style="width:16%;">BARCODE</th>
+                                <th style="width:42%;">DESCRIPTION</th>
+                                <th style="width:12%;">PRICE</th>
+                                <th style="width:9%;">QTY</th>
+                                <th style="width:12%;">TOTAL</th>
+                                <th style="width:3%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cartBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="totals-panel">
+                    <div class="totals-row amount">
+                        <span class="t-label">TOTAL AMOUNT</span>
+                        <span class="t-value" id="totalAmountValue">£0.00</span>
+                    </div>
+                    <div class="totals-row payable">
+                        <span class="t-label">AMT. PAYABLE</span>
+                        <span class="t-value" id="amtPayableValue">£0.00</span>
+                    </div>
+                    <div class="totals-row change">
+                        <span class="t-label">CASH CHANGE</span>
+                        <span class="t-value" id="cashChangeValue">£0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bottom-section">
+                <div class="quick-panel">
+                    <!-- Daily weather -> sales-outlook bulletin, see /api/weather/insight
+                         and loadWeatherInsight() in dashboard.js. Click opens the full-day
+                         forecast + sales-outlook popup (#weatherPopupOverlay below). -->
+                    <div class="weather-card" id="weatherCard" title="Click for full forecast & sales outlook">
+                        <div class="weather-masthead">
+                            <span class="weather-masthead-label">BULLETIN</span>
+                            <span class="weather-signal" id="weatherSignal"></span>
+                        </div>
+                        <div class="weather-ticker" id="weatherTicker">
+                            <span class="weather-ticker-text" id="weatherTickerText">Loading weather insight…</span>
+                        </div>
+                        <div class="weather-rain-overlay" id="weatherRainOverlay">
+                            <span></span><span></span><span></span><span></span><span></span>
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <div class="weather-sun-overlay" id="weatherSunOverlay">
+                            <span class="weather-sun-core"></span>
+                            <span class="weather-sun-glint"></span><span class="weather-sun-glint"></span>
+                            <span class="weather-sun-glint"></span><span class="weather-sun-glint"></span>
+                            <span class="weather-sun-glint"></span><span class="weather-sun-glint"></span>
+                        </div>
+                    </div>
+
+                    <div class="categories-block">
+                        <div class="quick-picks-view" id="quickPicksView">
+                            <div class="quick-picks-group">
+                                <div class="section-subtitle">BEST SALE PRODUCTS</div>
+                                <div class="products-grid" id="productsGrid"></div>
+                            </div>
+
+                            <div class="quick-picks-group">
+                                <div class="section-subtitle">CATEGORIES</div>
+                                <div class="categories-grid">
+                                    <button class="cat-btn"><svg class="cat-icon"><use href="#i-menitems"/></svg><span class="btn-label">MEN</span></button>
+                                    <button class="cat-btn"><svg class="cat-icon"><use href="#i-womenitems"/></svg><span class="btn-label">WOMEN</span></button>
+                                    <button class="cat-btn"><svg class="cat-icon"><use href="#i-blackseed"/></svg><span class="btn-label">BLACKSEED</span></button>
+                                    <button class="cat-btn" hidden><svg class="cat-icon"><use href="#i-box"/></svg><span class="btn-label"></span></button>
+                                    <button class="cat-btn" hidden><svg class="cat-icon"><use href="#i-box"/></svg><span class="btn-label"></span></button>
+                                    <button class="cat-btn" hidden><svg class="cat-icon"><use href="#i-box"/></svg><span class="btn-label"></span></button>
+                                    <button class="cat-btn" hidden><svg class="cat-icon"><use href="#i-box"/></svg><span class="btn-label"></span></button>
+                                    <button class="cat-btn" hidden><svg class="cat-icon"><use href="#i-box"/></svg><span class="btn-label"></span></button>
+                                    <button class="cat-btn" hidden><svg class="cat-icon"><use href="#i-box"/></svg><span class="btn-label"></span></button>
+                                    <button class="cat-btn"><svg class="cat-icon"><use href="#i-opensale"/></svg><span class="btn-label">NO BARCODE</span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Replaces the view above whenever the cart holds an item with an
+                             active Promotion - see renderPromoPanel() in dashboard.js -->
+                        <div class="promo-panel-view" id="promoPanelView" hidden>
+                            <div class="section-title promo-panel-title">ACTIVE DISCOUNTS</div>
+                            <div class="promo-panel-list gold-scroll" id="promoPanelList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="keypad-area">
+                    <div class="open-sale-col">
+                        <div class="open-sale-label">Open Sale Prices</div>
+                        <div class="open-sale-quick">
+                        <button class="open-sale-quick-btn" type="button" data-price="1.25">£1.25</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="1.50">£1.50</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="1.95">£1.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="2.50">£2.50</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="2.95">£2.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="3.50">£3.50</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="3.95">£3.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="4.50">£4.50</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="4.95">£4.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="5.95">£5.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="6.50">£6.50</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="6.95">£6.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="7.95">£7.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="9.95">£9.95</button>
+                        <button class="open-sale-quick-btn" type="button" data-price="11.95">£11.95</button>
+                        </div>
+                    </div>
+
+                    <div class="keypad-block">
+                        <div class="keypad-grid">
+                            <button class="key-btn" data-key="1">1</button>
+                            <button class="key-btn" data-key="2">2</button>
+                            <button class="key-btn" data-key="3">3</button>
+                            <button class="key-btn action black-gold" id="keypadInventoryBtn" type="button"><svg class="k-icon"><use href="#i-box"/></svg>INVENTORY</button>
+
+                            <button class="key-btn" data-key="4">4</button>
+                            <button class="key-btn" data-key="5">5</button>
+                            <button class="key-btn" data-key="6">6</button>
+                            <button class="key-btn pale" data-key="backspace"><svg class="k-icon"><use href="#i-backspace"/></svg></button>
+
+                            <button class="key-btn" data-key="7">7</button>
+                            <button class="key-btn" data-key="8">8</button>
+                            <button class="key-btn" data-key="9">9</button>
+                            <button class="key-btn action green-btn" data-key="enter"><svg class="k-icon"><use href="#i-check"/></svg>ENTER</button>
+
+                            <button class="key-btn" data-key="0">0</button>
+                            <button class="key-btn" data-key="00">00</button>
+                            <button class="key-btn" data-key="multiply">*</button>
+                            <button class="key-btn action" data-key="keyboard"><svg class="k-icon"><use href="#i-keyboard"/></svg>KEYBOARD</button>
+
+                            <button class="key-btn orange-btn" data-key="cash-50">£50</button>
+                            <button class="key-btn orange-btn" data-key="cash-20">£20</button>
+                            <button class="key-btn orange-btn" data-key="cash-10">£10</button>
+                            <button class="key-btn action tan" data-key="clear-sale"><svg class="k-icon"><use href="#i-trash"/></svg>CLEAR SALE</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar">
+            <div class="sidebar-top-row">
+                <button class="sidebar-top-btn back-branch-btn" id="backToBranchBtn" type="button" title="Back to branch selection">
+                    <svg class="top-btn-icon"><use href="#i-arrow-left"/></svg>
+                    <span>BACK</span>
+                </button>
+                <button class="sidebar-top-btn logout-dash-btn" id="dashLogoutBtn" type="button" title="Logout">
+                    <svg class="top-btn-icon"><use href="#i-logout"/></svg>
+                    <span>LOGOUT</span>
+                </button>
+            </div>
+
+            <button class="menu-btn c-inventory" id="sidebarSettingsBtn"><span class="icon-box"><svg class="m-icon"><use href="#i-gear"/></svg></span><span class="label">SETTINGS</span></button>
+            <button class="menu-btn c-hold"><span class="icon-box"><svg class="m-icon"><use href="#i-pause"/></svg></span><span class="label">ON HOLD</span></button>
+            <button class="menu-btn c-return"><span class="icon-box"><svg class="m-icon"><use href="#i-undo"/></svg></span><span class="label">GOODS<br>RETURN</span></button>
+            <button class="menu-btn c-inquiry"><span class="icon-box"><svg class="m-icon"><use href="#i-search"/></svg></span><span class="label">INQUIRY</span></button>
+            <button class="menu-btn c-discount"><span class="icon-box"><svg class="m-icon"><use href="#i-percent"/></svg></span><span class="label">DISCOUNT</span></button>
+            <button class="menu-btn c-opensale"><span class="icon-box"><svg class="m-icon"><use href="#i-tag"/></svg></span><span class="label">OPEN SALE</span></button>
+            <button class="menu-btn c-voucher"><span class="icon-box"><svg class="m-icon"><use href="#i-voucher"/></svg></span><span class="label">VOUCHER</span></button>
+            <button class="menu-btn c-void"><span class="icon-box"><svg class="m-icon"><use href="#i-block"/></svg></span><span class="label">VOID</span></button>
+            <button class="menu-btn c-cardsale"><span class="icon-box"><svg class="m-icon"><use href="#i-card"/></svg></span><span class="label">CARD SALE</span></button>
+            <button class="menu-btn c-cashsale"><span class="icon-box"><svg class="m-icon"><use href="#i-cash"/></svg></span><span class="label">CASH SALE</span></button>
+        </div>
+    </div>
+</div>
+
+<!-- Filled fresh and printed by printReceipt() in js/dashboard.js right after a CASH/CARD sale -
+     hidden on screen, only shown to the printer (see #receiptPrintArea's @media print rules above). -->
+<div id="receiptPrintArea"></div>
+
+<!-- Bump this version number whenever the JS files change, so browsers don't cache stale copies -->
+<script src="js/dashboard.js?v=20260909a"></script>
+
+<script src="js/login.js?v=20260906d"></script>
+
+<script src="js/branch.js?v=20260907a"></script>
+
+<script src="js/register.js?v=20260906d"></script>
+
+</body>
+</html>

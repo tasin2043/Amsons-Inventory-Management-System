@@ -1,254 +1,260 @@
-let registerWebcamInstance = null;
-let currentAllocatedStaffId = ""; 
+    // Employee registration screen: Login <-> Register nav, employee id,
+    // PIN fields, and selfie camera capture.
 
-// Admin/management roles need a security code to select
-if (document.getElementById("registerRole")) {
-    document.getElementById("registerRole").addEventListener("change", (event) => {
-        const selectedRole = event.target.value;
+    // Live preview of the next employee id; re-fetched fresh on submit below
+    function showNextId() {
+        var idLabel = document.getElementById('regIdNumber');
+        fetch(MAIN_API_BASE + '/api/next-staff-id')
+            .then(function (res) { return res.json(); })
+            .then(function (data) { idLabel.textContent = (data.next_id || '').replace('AMS-', ''); })
+            .catch(function () { idLabel.textContent = '----'; });
+    }
 
-        if (selectedRole === "admin") {
-            alert("🛡️ SYSTEM NOTICE: Accessing Restricted System Administration Role Node.");
-            const authCodeInput = prompt("🔑 Enter Secure Administrative Verification Override Key:");
-            
-            if (authCodeInput === "0693") {
-                displayNotification("✅ Admin authorization verified. Access granted to select role schema.", true);
-            } else {
-                alert("❌ INVALID SECURITY KEY! Access to Administrator clearance level has been rejected.");
-                event.target.value = "staff"; // reset to default role
-                displayNotification("⚠️ Security warning logs saved: Unauthorized admin upgrade attempt detected.", false);
-            }
-        } else if (selectedRole === "management") {
-            alert("💼 MANAGEMENT NOTICE: Accessing High-Level System Corporate Clearance Nodes.");
-            const authCodeInput = prompt("🔑 Enter Secure Management Verification Override Key:");
-            
-            if (authCodeInput === "9360") {
-                displayNotification("✅ Management credentials matched. Access granted to structural role config.", true);
-            } else {
-                alert("❌ INVALID SECURITY KEY! Management privileges upgrade pipeline execution terminated.");
-                event.target.value = "staff"; // reset to default role
-                displayNotification("⚠️ System context warning logs saved: Verification mismatch on role change operation.", false);
-            }
+    // Navigation between Login <-> Register
+    var loginScreenEl = document.getElementById('loginScreen');
+    var registerScreenEl = document.getElementById('registerScreen');
+
+    document.getElementById('goRegisterBtn').addEventListener('click', function () {
+        showNextId();
+        loginScreenEl.style.display = 'none';
+        registerScreenEl.style.display = 'flex';
+    });
+
+    document.getElementById('backToLoginBtn').addEventListener('click', function () {
+        stopCamera();
+        registerScreenEl.style.display = 'none';
+        loginScreenEl.style.display = 'flex';
+        usernameInput.focus();
+        activeField = usernameInput;
+    });
+
+    // Field focus tracking, shares the login screen's "activeField" variable
+    var regName = document.getElementById('regName');
+    var regEmail = document.getElementById('regEmail');
+    var regPassword = document.getElementById('regPassword');
+    var regConfirmPassword = document.getElementById('regConfirmPassword');
+    [regName, regEmail, regPassword, regConfirmPassword].forEach(function (el) {
+        el.addEventListener('focus', function () { activeField = el; });
+    });
+
+    // PIN visibility toggles
+    function wireEye(btnId, iconId, input) {
+        document.getElementById(btnId).addEventListener('click', function () {
+            var isHidden = input.type === 'password';
+            input.type = isHidden ? 'text' : 'password';
+            document.getElementById(iconId).innerHTML =
+                '<use href="' + (isHidden ? '#i-eye-off' : '#i-eye') + '"/>';
+        });
+    }
+    wireEye('regToggleEye1', 'regEyeIcon1', regPassword);
+    wireEye('regToggleEye2', 'regEyeIcon2', regConfirmPassword);
+
+    // Selfie camera capture: guided multi-angle Face ID enrollment
+    var FACE_STEPS = [
+        'Look straight at the camera',
+        'Slowly turn your head to the LEFT',
+        'Slowly turn your head to the RIGHT',
+        'Tilt your head UP a little',
+        'Tilt your head DOWN a little'
+    ];
+
+    var selfieVideo = document.getElementById('selfieVideo');
+    var selfieImg = document.getElementById('selfieImg');
+    var selfiePlaceholder = document.getElementById('selfiePlaceholder');
+    var selfieStepRow = document.getElementById('selfieStepRow');
+    var selfieStepText = document.getElementById('selfieStepText');
+    var selfieDots = document.getElementById('selfieDots');
+    var cameraStream = null;
+    var selfieDataUrls = [];
+    var cameraErrored = false;
+
+    selfieDots.innerHTML = FACE_STEPS.map(function () { return '<span class="selfie-dot"></span>'; }).join('');
+
+    function stopCamera() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(function (t) { t.stop(); });
+            cameraStream = null;
+        }
+    }
+
+    function updateStepUi() {
+        var step = selfieDataUrls.length;
+        selfieDots.querySelectorAll('.selfie-dot').forEach(function (dot, i) {
+            dot.classList.toggle('done', i < step);
+        });
+        if (step < FACE_STEPS.length) {
+            selfieStepText.textContent = 'Step ' + (step + 1) + ' of ' + FACE_STEPS.length + ': ' + FACE_STEPS[step];
+            document.getElementById('captureBtn').textContent = 'CAPTURE PHOTO ' + (step + 1) + ' / ' + FACE_STEPS.length;
+        }
+    }
+
+    function startCamera() {
+        var status = document.getElementById('cameraStatus');
+        status.textContent = 'Opening camera...';
+        status.classList.remove('ok');
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            cameraErrored = true;
+            status.textContent = 'Camera not supported on this device/browser.';
+            return;
+        }
+
+        navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' },
+            audio: false
+        }).then(function (stream) {
+            cameraStream = stream;
+            selfieVideo.srcObject = stream;
+            selfiePlaceholder.style.display = 'none';
+            selfieImg.style.display = 'none';
+            selfieVideo.style.display = 'block';
+            selfieStepRow.style.display = 'flex';
+            document.getElementById('startRow').style.display = 'none';
+            document.getElementById('captureRow').style.display = 'flex';
+            document.getElementById('retakeRow').style.display = 'none';
+            status.textContent = '';
+            updateStepUi();
+        }).catch(function (err) {
+            cameraErrored = true;
+            status.textContent = 'Camera unavailable: ' + err.message;
+        });
+    }
+
+    document.getElementById('startCameraBtn').addEventListener('click', startCamera);
+
+    document.getElementById('captureBtn').addEventListener('click', function () {
+        var canvas = document.createElement('canvas');
+        canvas.width = selfieVideo.videoWidth;
+        canvas.height = selfieVideo.videoHeight;
+        canvas.getContext('2d').drawImage(selfieVideo, 0, 0, canvas.width, canvas.height);
+        selfieDataUrls.push(canvas.toDataURL('image/jpeg', 0.92));
+
+        var status = document.getElementById('cameraStatus');
+
+        if (selfieDataUrls.length >= FACE_STEPS.length) {
+            selfieImg.src = selfieDataUrls[0];
+            selfieVideo.style.display = 'none';
+            selfieImg.style.display = 'block';
+            stopCamera();
+            selfieStepRow.style.display = 'none';
+            document.getElementById('captureRow').style.display = 'none';
+            document.getElementById('retakeRow').style.display = 'flex';
+            status.textContent = '✔ ' + selfieDataUrls.length + ' photos captured for Face ID';
+            status.classList.add('ok');
+        } else {
+            updateStepUi();
+            status.textContent = '✔ Photo ' + selfieDataUrls.length + ' captured';
+            status.classList.add('ok');
         }
     });
-}
 
-// Guided multi-angle Face ID enrollment: captures several head angles so
-// recognition works reliably later under different lighting/angles.
-const FACE_ENROLL_STEPS = [
-    "Look straight at the camera",
-    "Slowly turn your head to the LEFT",
-    "Slowly turn your head to the RIGHT",
-    "Tilt your head UP a little",
-    "Tilt your head DOWN a little"
-];
-let capturedFacePhotos = [];
+    document.getElementById('retakeBtn').addEventListener('click', function () {
+        selfieDataUrls = [];
+        var status = document.getElementById('cameraStatus');
+        status.textContent = '';
+        status.classList.remove('ok');
+        startCamera();
+    });
 
-function openCameraModalUI() {
-    const modalFrame = document.getElementById("cameraPopupModal");
-    if(modalFrame) {
-        openRightSlidePanel("cameraPopupModal");
-        initializeWebcam();
-    }
-}
-
-function closeCameraModalUI() {
-    const modalFrame = document.getElementById("cameraPopupModal");
-    if(modalFrame) {
-        closeRightSlidePanel("cameraPopupModal");
-        terminateWebcam();
-    }
-}
-
-function renderFaceStepUi() {
-    const stepRow = document.getElementById("faceStepRow");
-    const stepText = document.getElementById("faceStepText");
-    const dotsRow = document.getElementById("faceStepDots");
-    const snapBtn = document.getElementById("captureSnapBtn");
-    if(!stepRow || !stepText || !dotsRow) return;
-
-    const step = capturedFacePhotos.length;
-    stepRow.classList.remove("hidden");
-    dotsRow.innerHTML = FACE_ENROLL_STEPS.map((_, i) =>
-        `<span class="w-2 h-2 rounded-full ${i < step ? 'bg-[#E6B950]' : 'bg-zinc-700'}"></span>`
-    ).join("");
-
-    if (step < FACE_ENROLL_STEPS.length) {
-        stepText.innerText = `Step ${step + 1} of ${FACE_ENROLL_STEPS.length}: ${FACE_ENROLL_STEPS[step]}`;
-        if (snapBtn) snapBtn.innerText = `📸 CAPTURE PHOTO ${step + 1} / ${FACE_ENROLL_STEPS.length}`;
-    }
-}
-
-async function initializeWebcam() {
-    const videoElement = document.getElementById("webcamStream");
-    const canvasElement = document.getElementById("photoCanvas");
-    const snapBtn = document.getElementById("captureSnapBtn");
-    const retakeBtn = document.getElementById("retakeAllBtn");
-    const statusLabel = document.getElementById("faceStatus");
-
-    capturedFacePhotos = [];
-    if (retakeBtn) retakeBtn.classList.add("hidden");
-    if (statusLabel) {
-        statusLabel.innerText = "Face Scan Required";
-        statusLabel.className = "mt-2 text-gray-400 text-xs font-mono";
+    function resetSelfie() {
+        stopCamera();
+        selfieDataUrls = [];
+        cameraErrored = false;
+        selfieVideo.style.display = 'none';
+        selfieImg.style.display = 'none';
+        selfiePlaceholder.style.display = 'flex';
+        selfieStepRow.style.display = 'none';
+        document.getElementById('startRow').style.display = 'flex';
+        document.getElementById('captureRow').style.display = 'none';
+        document.getElementById('retakeRow').style.display = 'none';
+        updateStepUi();
+        var status = document.getElementById('cameraStatus');
+        status.textContent = '';
+        status.classList.remove('ok');
     }
 
-    try {
-        if(canvasElement) canvasElement.classList.add("hidden");
-        if(videoElement) videoElement.classList.remove("hidden");
+    // Register form submit
+    var registerForm = document.getElementById('registerForm');
+    var registerBtn = document.getElementById('registerBtn');
+    var registerStatus = document.getElementById('registerStatus');
 
-        registerWebcamInstance = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
-            audio: false
-        });
-        videoElement.srcObject = registerWebcamInstance;
-
-        if(snapBtn) {
-            snapBtn.classList.remove("hidden");
-            snapBtn.disabled = false;
-        }
-        renderFaceStepUi();
-    } catch (error) {
-        console.error("Camera interface deployment error tracker log:", error);
-        displayNotification("Camera connection blocked. Please grant browser physical layer permissions.", false);
-        closeCameraModalUI();
+    function regError(msg) {
+        registerStatus.textContent = msg;
+        registerStatus.classList.remove('ok');
+        registerBtn.classList.add('error');
+        setTimeout(function () { registerBtn.classList.remove('error'); }, 500);
     }
-}
 
-function captureSnapshot() {
-    const videoElement = document.getElementById("webcamStream");
-    const canvasElement = document.getElementById("photoCanvas");
-    const hiddenInput = document.getElementById("capturedPhotoData");
-    const snapBtn = document.getElementById("captureSnapBtn");
-    const retakeBtn = document.getElementById("retakeAllBtn");
-    const statusLabel = document.getElementById("faceStatus");
+    registerForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var name = regName.value.trim();
+        var email = regEmail.value.trim();
+        var pass = regPassword.value.trim();
+        var confirm = regConfirmPassword.value.trim();
 
-    if(!videoElement || !canvasElement) return;
-
-    const context = canvasElement.getContext("2d");
-    canvasElement.width = videoElement.videoWidth || 640;
-    canvasElement.height = videoElement.videoHeight || 480;
-    context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-
-    capturedFacePhotos.push(canvasElement.toDataURL("image/jpeg", 0.92));
-    if(hiddenInput) hiddenInput.value = capturedFacePhotos[0];
-
-    if (capturedFacePhotos.length >= FACE_ENROLL_STEPS.length) {
-        // All angles captured - freeze last frame as preview and stop the camera
-        videoElement.classList.add("hidden");
-        canvasElement.classList.remove("hidden");
-        terminateWebcam();
-
-        if (snapBtn) snapBtn.classList.add("hidden");
-        if (retakeBtn) retakeBtn.classList.remove("hidden");
-
-        if(statusLabel) {
-            statusLabel.innerText = `✔ ${capturedFacePhotos.length} angles captured for Face ID`;
-            statusLabel.className = "mt-2 text-emerald-400 text-xs font-bold uppercase tracking-widest";
+        if (!name) { regError('Please enter your full name'); return; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { regError('Please enter a valid email'); return; }
+        if (!/^\d{4}$/.test(pass)) { regError('Password must be exactly 4 digits'); return; }
+        if (pass !== confirm) { regError('Passwords do not match'); return; }
+        if (selfieDataUrls.length < FACE_STEPS.length && !cameraErrored) {
+            regError('Please capture all ' + FACE_STEPS.length + ' Face ID photos');
+            return;
         }
 
-        renderFaceStepUi();
-        setTimeout(() => { closeCameraModalUI(); }, 1200);
-    } else {
-        // Camera stays on, move to the next angle
-        renderFaceStepUi();
-        if(statusLabel) {
-            statusLabel.innerText = `✔ Photo ${capturedFacePhotos.length} captured - keep going`;
-            statusLabel.className = "mt-2 text-emerald-400 text-xs font-bold uppercase tracking-widest";
+        registerBtn.disabled = true;
+        registerStatus.classList.remove('ok');
+        registerStatus.textContent = 'Creating account...';
+
+        function finishRegistration(newId, message) {
+            registerStatus.classList.add('ok');
+            registerStatus.textContent = message;
+            setTimeout(function () {
+                registerForm.reset();
+                resetSelfie();
+                registerStatus.textContent = '';
+                registerStatus.classList.remove('ok');
+                registerBtn.disabled = false;
+
+                registerScreenEl.style.display = 'none';
+                loginScreenEl.style.display = 'flex';
+                usernameInput.value = newId.replace('AMS-', '');
+                passwordInput.value = '';
+                passwordInput.focus();
+                activeField = passwordInput;
+            }, 1400);
         }
-    }
-}
 
-function retakeAllSnapshots() {
-    const hiddenInput = document.getElementById("capturedPhotoData");
-    if (hiddenInput) hiddenInput.value = "";
-    initializeWebcam();
-}
+        // Registers into the main backend's real users table, so this account
+        // also works to log into the inventory app
+        fetch(MAIN_API_BASE + '/api/next-staff-id')
+            .then(function (res) { return res.json(); })
+            .then(function (idData) {
+                var newId = idData.next_id;
 
-function terminateWebcam() {
-    if (registerWebcamInstance) {
-        registerWebcamInstance.getTracks().forEach(track => track.stop());
-        registerWebcamInstance = null;
-    }
-}
+                var registrationFormData = new FormData();
+                registrationFormData.append('staff_id', newId);
+                registrationFormData.append('name', name);
+                registrationFormData.append('email', email);
+                registrationFormData.append('password', pass);
+                registrationFormData.append('role', 'staff');
+                // Sends all 5 angle photos for Face ID enrollment (needs 3+ usable ones)
+                selfieDataUrls.forEach(function (photo) { registrationFormData.append('facePhotos', photo); });
 
-// Register form submit handler
-document.getElementById("registerForm").addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const allocatedStaffId = document.getElementById("liveAllocatedIdDisplay").innerText;
-    const staffRealName = document.getElementById("regName").value.trim();
-    const staffEmailAddress = document.getElementById("regEmail").value.trim();
-    const rawInputPassword = document.getElementById("registerPassword").value.trim();
-    const accountRolePermission = document.getElementById("registerRole").value;
-
-    const strongPasswordRegex = /^\d{4}$/;  // PIN must be exactly 4 digits
-
-    if (!strongPasswordRegex.test(rawInputPassword)) {
-        displayNotification("PIN matrix mismatch! Ensure your PIN is exactly 4 digits long and contains only numbers.", false);
-        return;
-    }
-
-    if (capturedFacePhotos.length < FACE_ENROLL_STEPS.length) {
-        displayNotification(`❌ Face verification incomplete! Capture all ${FACE_ENROLL_STEPS.length} Face ID angles first.`, false);
-        return;
-    }
-
-    try {
-        const registrationPayloadData = new FormData();
-        registrationPayloadData.append("staff_id", allocatedStaffId);
-        registrationPayloadData.append("name", staffRealName);
-        registrationPayloadData.append("email", staffEmailAddress);
-        registrationPayloadData.append("password", rawInputPassword);
-        registrationPayloadData.append("role", accountRolePermission);
-        capturedFacePhotos.forEach(photo => registrationPayloadData.append("facePhotos", photo));
-
-        displayNotification("Encrypting and saving user profile configuration pipeline to database...", true);
-
-        const networkResponse = await fetch(`${apiUrl}/api/register-staff`, {
-            method: "POST",
-            body: registrationPayloadData
-        });
-
-        const logDataResult = await networkResponse.json();
-
-        if (networkResponse.ok) {
-            displayNotification(`Registration Successful! Identity bound to ID: ${allocatedStaffId}. Please log in now.`, true);
-
-            document.getElementById("registerForm").reset();
-            if(document.getElementById("capturedPhotoData")) document.getElementById("capturedPhotoData").value = "";
-            capturedFacePhotos = [];
-
-            const faceLabel = document.getElementById("faceStatus");
-            if(faceLabel) {
-                faceLabel.innerText = "Face Scan Required";
-                faceLabel.className = "mt-2 text-gray-400 text-xs font-mono";
-            }
-            const stepRow = document.getElementById("faceStepRow");
-            if (stepRow) stepRow.classList.add("hidden");
-            const retakeBtn = document.getElementById("retakeAllBtn");
-            if (retakeBtn) retakeBtn.classList.add("hidden");
-
-            setTimeout(() => {
-                toggleAuthMode(false);
-            }, 3000);
-        } else {
-            displayNotification(logDataResult.detail || "Registration processing firewall rejected the connection request.");
-        }
-    } catch (apiErrorTracer) {
-        console.error("Staff registration system exception tracking breakdown:", apiErrorTracer);
-        displayNotification("Failed to contact centralized database access authentication mapping servers.");
-    }
-});
-
-async function initializeRegistrationFormUI() {
-    try {
-        const response = await fetch(`${apiUrl}/api/next-staff-id`);
-        const data = await response.json();
-        
-        if (response.ok && data.status === "success") {
-            document.getElementById("liveAllocatedIdDisplay").innerText = data.next_id;
-        }
-    } catch (err) {
-        console.error("System staff tracking directories network connectivity issue:", err);
-    }
-}
+                return fetch(MAIN_API_BASE + '/api/register-staff', { method: 'POST', body: registrationFormData })
+                    .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data, newId: newId }; }); });
+            })
+            .then(function (result) {
+                if (!result.ok) {
+                    registerBtn.disabled = false;
+                    regError(result.data.detail || 'Registration failed');
+                    return;
+                }
+                var newId = result.newId;
+                // Face ID already enrolled in the call above
+                finishRegistration(newId, '✔ Registered as ' + newId + ' — Face ID ready. Redirecting...');
+            })
+            .catch(function () {
+                registerBtn.disabled = false;
+                regError('Server unreachable - check your connection.');
+            });
+    });
