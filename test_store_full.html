@@ -1,0 +1,2833 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amsonstock Alumrock</title>
+    <link rel="icon" href="data:;base64,=">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        roboto: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                    fontSize: {
+                        xs: '0.85rem',
+                        sm: '1rem',
+                        base: '1.125rem',
+                        lg: '1.25rem',
+                        xl: '1.4rem',
+                        '2xl': '1.7rem',
+                        '3xl': '2.1rem',
+                        '4xl': '2.5rem',
+                        '5xl': '3.3rem',
+                        '6xl': '4.1rem',
+                        '7xl': '4.9rem',
+                        '8xl': '6.5rem',
+                        '9xl': '8.6rem',
+                    },
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        :root {
+            --gold: #E6B950;
+            --gold-light: #F4D878;
+            --gold-dark: #B8862E;
+            --bg: #0F1115;
+            --card: #111418;
+        }
+        #qrScannerInternalTarget video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            max-height: 320px !important;
+        }
+        #qrScannerInternalTarget {
+            overflow: hidden !important;
+        }
+        @keyframes shrinkBar {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+        @keyframes scan {
+            0% { top: 10%; }
+            50% { top: 85%; }
+            100% { top: 10%; }
+        }
+        .animate-scan {
+            animation: scan 3s linear infinite !important;
+        }
+        @keyframes glowFace {
+            0%, 100% {
+                filter: drop-shadow(0 0 8px rgba(230,185,80,0.5));
+            }
+            50% {
+                filter: drop-shadow(0 0 16px rgba(230,185,80,0.8));
+            }
+        }
+        @keyframes tapPulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.85;
+                transform: scale(0.98);
+            }
+        }
+        #aiFaceOverlay {
+            animation: glowFace 2s infinite ease-in-out;
+        }
+        .tap-btn-animate {
+            animation: tapPulse 2s infinite ease-in-out;
+        }
+
+        /* Hides everything except the one card being printed */
+        @media print {
+            body.printing-single-card * {
+                visibility: hidden !important;
+            }
+            body.printing-single-card .print-card-target,
+            body.printing-single-card .print-card-target * {
+                visibility: visible !important;
+            }
+            body.printing-single-card .print-card-target {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+            }
+        }
+
+
+        @layer utilities {
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
+
+@keyframes sidebarSoftGlowPulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(230,185,80,0.15); border-color: rgba(230,185,80,0.4); }
+    50%      { box-shadow: 0 0 12px rgba(230,185,80,0.55); border-color: rgba(230,185,80,0.9); }
+}
+.sidebar-soft-glow-btn {
+    animation: sidebarSoftGlowPulse 2.6s ease-in-out infinite;
+}
+
+.storeroom-card {
+    position: relative;
+    background: #FAF9F6;
+    border: 1px solid rgba(0,0,0,0.35);
+    border-radius: 18px;
+    padding: 0;
+    text-align: center;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.storeroom-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 35px rgba(0,0,0,0.14);
+    border-color: rgba(0,0,0,0.55);
+}
+
+.storeroom-card-actions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 2;
+}
+
+.storeroom-icon-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.storeroom-icon-btn:hover {
+    background: rgba(0,0,0,0.15);
+}
+
+.storeroom-card-body {
+    display: block;
+    width: 100%;
+    padding: 36px 20px;
+    background: transparent;
+    text-align: center;
+}
+
+.storeroom-icon {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: rgba(230,185,80,0.12);
+    color: #D49A00;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 54px;
+}
+
+.storeroom-card h3 {
+    font-size: 24px;
+    font-weight: 900;
+    color: #000000;
+    margin-bottom: 10px;
+}
+
+
+.arrow-btn {
+    display: inline-flex;
+    border: 1px solid #D49A00;
+    color: #D49A00;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.storeroom-card:hover .arrow-btn {
+
+    background: #E6B950;
+    color: #000000;
+}
+
+
+.storeroom-map-box {
+
+    border: 2px solid #333;
+
+    padding: 18px;
+
+    display: grid;
+
+    grid-template-columns: 1fr 90px 1fr;
+
+    gap: 20px;
+
+    background: white;
+
+    overflow-x: auto;
+
+}
+
+
+
+.map-side {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 28px;
+
+    min-width: 390px;
+
+}
+
+
+
+.shelf-row {
+
+    display: grid;
+
+    grid-template-columns: 58px repeat(6, 1fr);
+
+    gap: 4px;
+
+    align-items: stretch;
+
+}
+
+
+
+.shelf-label {
+
+    border: 1px solid #ddd;
+
+    border-radius: 8px;
+
+    font-size: 26px;
+
+    font-weight: 900;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+
+.location-cell {
+
+    position: relative;
+
+    border: 1px solid #d8d8d8;
+
+    border-radius: 7px;
+
+    min-height: 55px;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+
+.status-dot {
+
+    width: 10px;
+
+    height: 10px;
+
+    border-radius: 50%;
+
+}
+
+
+
+.good { background: #3b7f2a; }
+
+.low { background: #ff9900; }
+
+.out { background: #d60018; }
+
+.empty { background: #d9d9d9; }
+
+
+
+.walkway {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-weight: 900;
+
+    text-align: center;
+
+    color: #111;
+
+}
+
+
+
+.map-legend {
+
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 22px;
+
+    padding: 14px;
+
+    border: 1px solid #eee;
+
+    border-radius: 10px;
+
+    box-shadow: 0 3px 12px rgba(0,0,0,0.05);
+
+}
+
+
+
+.map-legend span {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+
+.dot {
+
+    width: 16px;
+
+    height: 16px;
+
+    border-radius: 50%;
+
+    display: inline-block;
+
+}
+
+
+
+.map-panel {
+
+    border: 1px solid #eee;
+
+    border-radius: 16px;
+
+    padding: 22px;
+
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+
+    background: white;
+
+}
+
+
+
+.map-panel h3 {
+
+    font-weight: 900;
+
+    margin-bottom: 16px;
+
+}
+
+
+
+.map-panel p {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    margin-bottom: 14px;
+
+    color: #333;
+
+}
+
+
+
+.green-text { color: #3b7f2a; }
+
+.orange-text { color: #ff9900; }
+
+.red-text { color: #d60018; }
+
+.gray-text { color: #999; }
+
+
+
+.map-input {
+
+    width: 100%;
+
+    border: 1px solid #ddd;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    margin-bottom: 10px;
+
+}
+
+
+
+.map-action {
+
+    width: 100%;
+
+    border: 1px solid #ddd;
+
+    padding: 12px;
+
+    border-radius: 8px;
+
+    margin-bottom: 10px;
+
+    text-align: left;
+
+}
+
+
+
+.map-label {
+
+    display: block;
+
+    font-size: 11px;
+
+    font-weight: 900;
+
+    margin: 14px 0 6px;
+
+}
+
+
+
+@media (max-width: 900px) {
+
+    .storeroom-map-box {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+
+    .walkway {
+
+        padding: 15px;
+
+    }
+
+
+
+    .map-side {
+
+        min-width: 650px;
+
+    }
+
+}
+
+@keyframes highScaleRedPulseGlow {
+    0%, 100% {
+        transform: scale(1.10);
+        box-shadow: 0 0 25px rgba(239, 68, 68, 0.75);
+        background: radial-gradient(circle, rgb(220, 38, 38) 0%, rgb(220, 38, 38) 40%, rgba(254, 202, 202, 0.15) 100%) !important;
+        border-color: rgb(248, 113, 113) !important;
+    }
+    50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 45px rgba(239, 68, 68, 1);
+        background: radial-gradient(circle, rgb(239, 68, 68) 0%, rgb(239, 68, 68) 40%, rgba(254, 202, 202, 0.4) 100%) !important;
+        border-color: rgb(254, 202, 202) !important;
+    }
+}
+
+/* Active marker styles */
+.animate-specific-pulse {
+    animation: highScaleRedPulseGlow 1.2s infinite ease-in-out !important;
+}
+
+/* Inventory alert styles */
+@keyframes dynamicAmberTransitPulseGlow {
+    0%, 100% {
+        transform: scale(1.08);
+        box-shadow: 0 0 20px rgba(245, 158, 11, 0.85);
+        background: radial-gradient(circle, rgb(245, 158, 11) 0%, rgb(245, 158, 11) 40%, rgba(253, 224, 71, 0.15) 100%) !important;
+        border-color: rgb(253, 224, 71) !important;
+    }
+    50% {
+        transform: scale(1.14);
+        box-shadow: 0 0 35px rgba(245, 158, 11, 1);
+        background: radial-gradient(circle, rgb(251, 191, 36) 0%, rgb(251, 191, 36) 40%, rgba(254, 240, 138, 0.4) 100%) !important;
+        border-color: rgb(254, 240, 138) !important;
+    }
+}
+
+.animate-amber-transit-pulse {
+    animation: dynamicAmberTransitPulseGlow 1.4s infinite ease-in-out !important;
+}
+
+@keyframes highScaleGreenPulseGlow {
+    0%, 100% {
+        transform: scale(1.10);
+        box-shadow: 0 0 25px rgba(34, 197, 94, 0.75);
+        background: radial-gradient(circle, rgb(22, 163, 74) 0%, rgb(22, 163, 74) 40%, rgba(134, 239, 172, 0.15) 100%) !important;
+        border-color: rgb(134, 239, 172) !important;
+    }
+    50% {
+        transform: scale(1.18);
+        box-shadow: 0 0 45px rgba(34, 197, 94, 1);
+        background: radial-gradient(circle, rgb(34, 197, 94) 0%, rgb(34, 197, 94) 40%, rgba(187, 247, 208, 0.4) 100%) !important;
+        border-color: rgb(187, 247, 208) !important;
+    }
+}
+
+.animate-green-pulse {
+    animation: highScaleGreenPulseGlow 1.2s infinite ease-in-out !important;
+}
+
+/* Base fade-in animation */
+@keyframes localCoreFadeInEffect {
+    from { opacity: 0; transform: scale(0.97) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-local-fade {
+    animation: localCoreFadeInEffect 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.storeroom-create-card {
+    background: rgba(230,185,80,0.05);
+    border: 2px dashed #D49A00;
+    border-radius: 18px;
+    padding: 36px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.storeroom-create-card:hover {
+    background: rgba(230,185,80,0.12);
+    transform: translateY(-6px);
+}
+.storeroom-create-card .storeroom-icon {
+    font-size: 40px;
+    font-weight: 900;
+}
+
+.storeroom-add-btn {
+    border: 1px solid #000000;
+    color: #000000;
+    font-weight: 800;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: white;
+    transition: all 0.2s ease;
+}
+.storeroom-add-btn:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+@keyframes statusDotBlink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.25; }
+}
+.status-blink {
+    animation: statusDotBlink 1s infinite ease-in-out;
+}
+
+.shelf-marker-dot {
+    position: absolute;
+    top: -18px;
+    right: -18px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgb(220, 38, 38);
+    border: 3px solid white;
+    z-index: 10;
+}
+
+.storeroom-list-icon-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.15);
+    color: #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: background 0.2s ease;
+}
+.storeroom-list-icon-btn:hover {
+    background: rgba(0,0,0,0.15);
+}
+.storeroom-list-icon-btn-light {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.35);
+    color: #ffffff;
+}
+.storeroom-list-icon-btn-light:hover {
+    background: rgba(255,255,255,0.32);
+}
+
+.dashboard-metric-tab {
+    background: transparent;
+    color: #a1a1aa;
+    border: 1px solid rgb(63 63 70);
+}
+.dashboard-metric-tab:hover {
+    color: #E6B950;
+    border-color: rgba(230,185,80,0.5);
+}
+.dashboard-metric-tab.active {
+    background: #E6B950;
+    color: #0D0A04;
+    border-color: #E6B950;
+}
+    </style>
+</head>
+
+
+<!-- Login -->
+
+<body class="text-gray-100 font-roboto min-h-screen bg-[radial-gradient(circle_at_top,#161A20_0%,#0F1115_65%,#070809_100%)]">
+
+        <div id="authMessage" class="hidden fixed bottom-5 right-5 z-[9999] flex items-center gap-3 bg-[#001019]/95 backdrop-blur-md border-2 p-4 rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.5)] max-w-sm w-full font-mono transition-all duration-500 transform translate-y-10 opacity-0">
+            <div id="toastIconSlot" class="w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0">
+                ✅
+            </div>
+            
+            <div class="flex-1">
+                <h4 id="toastTitleSlot" class="text-xs font-bold uppercase tracking-wider text-gray-400">System Notification</h4>
+                <p id="authMessageText" class="text-xs font-medium text-gray-200 mt-0.5 leading-relaxed">
+                    Processing system state...
+                </p>
+            </div>
+
+            <button type="button" onclick="closeToastNotificationExplicitly()" class="text-gray-500 hover:text-white transition text-xs pl-1 focus:outline-none">
+                ✕
+            </button>
+        </div>
+
+    <div id="authSection" class="min-h-screen w-full flex items-center justify-center px-4 py-6 overflow-y-auto">
+        <div class="w-full max-w-screen-xl mx-auto">
+
+           <div id="loginFormContainer" class="w-full max-w-6xl border border-[#E6B950]/30 rounded-[32px] p-5 sm:p-6 lg:p-10 backdrop-blur-sm bg-black/40 shadow-[0_0_40px_rgba(230,185,80,0.15)]">
+    <!-- Face Scan View -->
+
+    <div id="authLandingView">
+    <div class="flex flex-col md:grid md:grid-cols-2 gap-6 md:gap-12 items-center">
+      <div class="w-full text-center md:text-left">
+        <img src="AMSONS.png" alt="Amsons logo" class="w-44 sm:w-60 md:w-64 lg:w-72 h-auto mx-auto md:mx-0 mb-1 md:mb-8">
+        <h2 class="text-white text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-1 md:mb-2">Face Recognition</h2>
+        <p id="scannerStatusText" class="text-gray-300 text-sm sm:text-base md:text-lg lg:text-xl">Position your face within the frame</p>
+      </div>
+      <div id="biometricScanContainer" class="w-full flex justify-center my-4 md:my-0 md:col-start-2 md:row-start-1 md:row-span-2">
+        <div class="relative aspect-square w-[240px] sm:w-[300px] md:w-[300px] lg:w-[430px] xl:w-[480px] max-w-[78vw] mx-auto flex items-center justify-center">
+          <div class="absolute top-0 left-0 w-7 h-7 border-t-2 border-l-2 border-[#E6B950] z-20"></div>
+          <div class="absolute top-0 right-0 w-7 h-7 border-t-2 border-r-2 border-[#E6B950] z-20"></div>
+          <div class="absolute bottom-0 left-0 w-7 h-7 border-b-2 border-l-2 border-[#E6B950] z-20"></div>
+          <div class="absolute bottom-0 right-0 w-7 h-7 border-b-2 border-r-2 border-[#E6B950] z-20"></div>
+          <div class="absolute inset-4 rounded-full overflow-hidden border-2 border-[#E6B950] shadow-[0_0_22px_rgba(230,185,80,0.45)]">
+            <img id="aiFaceOverlay" src="amFace.png" onclick="executeManualCameraTrigger()" class="absolute inset-0 w-full h-full object-contain rounded-full cursor-pointer z-30" style="filter: drop-shadow(0 0 8px rgba(230,185,80,0.5));">
+            <video id="loginWebcamStream" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+            <canvas id="loginPhotoCanvas" class="w-full h-full object-cover hidden"></canvas>
+          </div>
+        </div>
+        <button type="button" id="toggleScanStateBtn" onclick="handleScanStateToggle()" class="hidden">
+          Pause Auto Scanning
+        </button>
+      </div>
+      <div class="w-full flex flex-col items-center md:items-start gap-4">
+        <button type="button" onclick="executeManualCameraTrigger()" class="tap-btn-animate w-full max-w-sm md:w-auto px-6 py-3 border border-[#E6B950] bg-[#E6B950]/10 rounded-xl text-[#E6B950] text-sm sm:text-base md:text-lg lg:text-xl font-bold tracking-wide uppercase shadow-[0_0_15px_rgba(230,185,80,0.2)] hover:bg-[#E6B950]/20 transition-all duration-300">
+          Tap the face to begin
+        </button>
+        <div class="text-center md:text-left mt-2">
+          <button type="button" onclick="showManualLogin()" class="relative z-40 block mx-auto md:mx-0 text-[#E6B950] underline underline-offset-8 text-base sm:text-lg md:text-xl lg:text-2xl hover:text-[#F4D878]">
+            Sign in with Employee ID
+          </button>
+          <p class="text-xs sm:text-sm text-gray-400 mt-4">
+            New staff member?
+            <button type="button" onclick="toggleAuthMode(true); if(typeof initializeRegistrationFormUI === 'function') initializeRegistrationFormUI();" class="relative z-40 text-[#E6B950] font-semibold hover:underline">
+              Register Account Here
+            </button>
+          </p>
+        </div>
+      </div>
+    </div>
+    </div>
+    <!-- Manual Login View -->
+    <div id="manualLoginContainer" class="hidden max-w-xl mx-auto">
+      <div class="text-center mb-6">
+        <div class="mx-auto mb-4 h-16 w-16 rounded-full border border-[#E6B950] flex items-center justify-center shadow-[0_0_25px_rgba(230,185,80,0.35)]">
+          <svg xmlns="[w3.org](http://www.w3.org/2000/svg)" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="#E6B950" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5a7.5 7.5 0 0115 0" />
+          </svg>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white">Employee Login</h2>
+        <p class="text-gray-300 mt-1">Please enter your credentials</p>
+      </div>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-bold mb-2 text-[#E6B950]">Employee ID</label>
+          <input type="text" id="loginUsername" required placeholder="Enter your Employee ID" class="w-full p-4 bg-black/40 border border-[#E6B950]/60 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-[#E6B950]" />
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-2 text-[#E6B950]">4 Digit PIN</label>
+          <input type="password" id="loginPassword" required placeholder="Enter your 4 Digit PIN" class="w-full p-4 bg-black/40 border border-[#E6B950]/60 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-[#E6B950]" />
+        </div>
+        <button type="submit" class="w-full mt-6 py-3 rounded-xl font-black text-black text-lg bg-gradient-to-r from-[#C99A2E] via-[#D4AF37] to-[#E6B950] shadow-[0_0_25px_rgba(230,185,80,0.35)]">
+          LOGIN
+        </button>
+      </form>
+      <div class="flex items-center gap-4 my-8">
+        <div class="h-px flex-1 bg-[#E6B950]/50"></div>
+        <div class="text-[#E6B950]">✿</div>
+        <div class="h-px flex-1 bg-[#E6B950]/50"></div>
+      </div>
+      <button type="button" onclick="showFaceScan()" class="block mx-auto text-[#E6B950] underline underline-offset-4 text-lg hover:text-[#FFD866]">
+        ← Back to Face Scan
+      </button>
+    </div>
+  </div>
+
+
+
+
+
+
+
+
+<!-- Registration -->
+
+            
+            <div id="registerFormContainer" class="hidden w-full max-w-3xl mx-auto border border-[#E6B950]/30 rounded-[32px] p-5 sm:p-6 lg:p-8 backdrop-blur-sm bg-black/10 shadow-[0_0_40px_rgba(230,185,80,0.15)] relative">
+                <h2 class="text-2xl sm:text-3xl font-bold mb-1 text-center text-[#D4AF37] tracking-wide">Employee Registration</h2>
+                <p class="text-center text-gray-300 text-sm mb-4">Create your secure staff account</p>
+
+                <form id="registerForm" class="space-y-3">
+                    <div class="mb-3 p-3 px-4 bg-black/40 border border-[#E6B950] rounded-xl text-center shadow-[0_0_25px_rgba(230,185,80,0.15)]">
+                        <span class="text-xs text-gray-400 uppercase tracking-wider block">Your Staff ID</span>
+                        <h2 id="liveAllocatedIdDisplay" class="text-xl font-bold text-amber-400 mt-1">AMS-XXX</h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-300">Your Name</label>
+                            <input type="text" id="regName" required class="w-full p-2.5 bg-black border border-[#E6B950]/60 rounded text-white focus:outline-none focus:border-amber-400">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-300">Email Address</label>
+                            <input type="email" id="regEmail" required placeholder="name@domain.com" class="w-full p-2.5 bg-black border border-[#E6B950]/60 rounded text-white focus:outline-none focus:border-amber-400">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-300">4-Digit PIN</label>
+                            <input type="password" id="registerPassword" required class="w-full p-2.5 bg-black border border-[#E6B950]/60 rounded text-white">
+                            <p class="text-[10px] text-gray-400 mt-1">Enter a secure 4-Digit PIN</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-1 text-gray-300">Staff Access Level</label>
+                            <select id="registerRole" class="w-full p-2.5 bg-black border border-[#E6B950]/60 rounded text-white">
+                                <option value="" selected disabled>Select Access Level</option>
+                                <option value="staff" class="bg-black">Staff</option>
+                                <option value="management" class="bg-black">Management</option>
+                                <option value="Official" class="bg-black"></option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="border border-[#E6B950]/50 rounded-xl p-4 bg-black/30 text-center shadow-[0_0_25px_rgba(230,185,80,0.15)]">
+                        <div class="mx-auto mb-2 h-10 w-10 rounded-full border border-[#E6B950] flex items-center justify-center shadow-[0_0_30px_rgba(230,185,80,0.25)]">
+                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#E6B950" stroke-width="2">
+                                <circle cx="12" cy="8" r="4"></circle>
+                                <path d="M4 20C4 16 8 14 12 14C16 14 20 16 20 20"></path>
+                            </svg>
+                        </div>
+
+                        <h3 class="text-base font-bold text-[#E6B950] tracking-wide">FACE ID VERIFICATION</h3>
+                        <p class="text-gray-400 text-xs mt-1 mb-3">Capture facial verification to activate your staff account</p>
+
+                        <div class="flex gap-2 justify-center">
+                            <button type="button" id="startCamBtn" onclick="openCameraModalUI()" class="border border-[#E6B950] text-[#E6B950] bg-[#E6B950]/10 px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-[#E6B950]/20 transition-all duration-300 shadow-[0_0_10px_rgba(230,185,80,0.15)]">
+                                👤 Start Camera
+                            </button>
+                        </div>
+
+                        <div id="faceStatus" class="mt-2 text-gray-400 text-xs font-mono">Face Scan Required</div>
+                        <input type="hidden" id="capturedPhotoData">
+                    </div>
+
+                    <button type="submit" class="w-full mt-2 bg-gradient-to-r from-[#7A5A17] via-[#B8860B] to-[#7A5A17] text-[#1a1200] font-bold py-3 rounded-lg text-lg tracking-wide hover:brightness-110 transition">
+                        CREATE ACCOUNT
+                    </button>
+                </form>
+
+                <button type="button" onclick="toggleAuthMode(false)" class="block mx-auto mt-4 text-gray-500 text-xs hover:text-[#E6B950] transition">
+                    ← Return to Employee Login
+                </button>
+
+                <div id="cameraPopupModal" class="hidden fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                    <div class="bg-[#111418] border-2 border-[#E6B950] rounded-2xl p-4 max-w-sm w-full shadow-[0_0_50px_rgba(230,185,80,0.3)] flex flex-col items-center">
+                        <div class="w-full flex justify-between items-center mb-3 border-b border-[#E6B950]/20 pb-2">
+                            <span class="text-xs font-black tracking-widest text-[#E6B950] uppercase">Biometric Capturing Hub</span>
+                            <button type="button" onclick="closeCameraModalUI()" class="text-gray-400 hover:text-red-400 font-mono text-sm">✕</button>
+                        </div>
+                        
+                        <div class="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-gray-700 shadow-inner">
+                            <video id="webcamStream" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+                            <canvas id="photoCanvas" class="w-full h-full object-cover hidden"></canvas>
+                        </div>
+
+                        <div class="mt-4 flex gap-3 w-full">
+                            <button type="button" id="captureSnapBtn" onclick="captureSnapshot()" class="flex-1 text-xs bg-gradient-to-r from-[#C99A2E] to-[#E6B950] text-black font-black py-2.5 rounded-lg uppercase tracking-wider shadow-md hidden">Capture</button>
+                            <button type="button" onclick="closeCameraModalUI()" class="flex-1 text-xs bg-zinc-800 text-gray-300 font-bold py-2.5 rounded-lg border border-zinc-700 uppercase tracking-wider">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            </div>
+
+
+
+
+
+
+
+<!-- Staff Attendance Kiosk -->
+
+    <div id="staffAttendanceKioskSection" class="hidden min-h-screen w-full bg-[radial-gradient(circle_at_top,#161A20_0%,#0F1115_65%,#070809_100%)] text-gray-100 flex flex-col items-center justify-center font-roboto p-6 relative overflow-hidden">
+
+        <button type="button" onclick="closeStaffAttendanceKiosk()" title="Back to Dashboard" class="absolute top-5 left-5 sm:top-8 sm:left-8 z-30 w-11 h-11 rounded-full bg-black/40 border-2 border-[#E6B950] text-[#E6B950] flex items-center justify-center shadow-md hover:bg-[#E6B950]/10 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+        </button>
+
+        <div class="w-full max-w-screen-xl mx-auto">
+            <div class="w-full max-w-4xl mx-auto border border-[#E6B950]/30 rounded-[32px] p-6 sm:p-10 lg:p-14 backdrop-blur-sm bg-black/40 shadow-[0_0_40px_rgba(230,185,80,0.15)] text-center">
+
+                <img src="AMSONS.png" alt="Amsons logo" class="w-40 sm:w-52 md:w-56 h-auto mx-auto mb-2">
+                <h2 class="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-wide mb-1">Staff Attendance</h2>
+                <p id="attendanceScannerStatusText" class="text-gray-300 text-sm sm:text-base md:text-lg mb-6">Position your face within the frame</p>
+
+                <!-- Idle/scanning state -->
+                <div id="attendanceScanView">
+                    <div class="relative aspect-square w-[220px] sm:w-[280px] md:w-[320px] mx-auto flex items-center justify-center mb-6">
+                        <div class="absolute top-0 left-0 w-7 h-7 border-t-2 border-l-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute top-0 right-0 w-7 h-7 border-t-2 border-r-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute bottom-0 left-0 w-7 h-7 border-b-2 border-l-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute bottom-0 right-0 w-7 h-7 border-b-2 border-r-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute inset-4 rounded-full overflow-hidden border-2 border-[#E6B950] shadow-[0_0_22px_rgba(230,185,80,0.45)]">
+                            <img id="attendanceFaceOverlay" src="amFace.png" onclick="bootAttendanceFaceScan()" class="absolute inset-0 w-full h-full object-contain rounded-full cursor-pointer z-30" style="filter: drop-shadow(0 0 8px rgba(230,185,80,0.5));">
+                            <video id="attendanceWebcamStream" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+                            <canvas id="attendancePhotoCanvas" class="w-full h-full object-cover hidden"></canvas>
+                        </div>
+                    </div>
+                    <button type="button" onclick="bootAttendanceFaceScan()" class="tap-btn-animate w-full max-w-sm mx-auto px-6 py-3 border border-[#E6B950] bg-[#E6B950]/10 rounded-xl text-[#E6B950] text-sm sm:text-base md:text-lg font-bold tracking-wide uppercase shadow-[0_0_15px_rgba(230,185,80,0.2)] hover:bg-[#E6B950]/20 transition-all duration-300">
+                        Tap the face to begin
+                    </button>
+                    <button type="button" onclick="showAttendanceManualEntry()" class="block mx-auto mt-4 text-[#E6B950] underline underline-offset-8 text-sm sm:text-base hover:text-[#F4D878]">
+                        Sign in with Employee ID
+                    </button>
+                </div>
+
+                <!-- Manual fallback: Employee ID + PIN -->
+                <div id="attendanceManualEntryView" class="hidden max-w-sm mx-auto">
+                    <form id="attendanceManualEntryForm" class="space-y-4 text-left">
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-[#E6B950]">Employee ID</label>
+                            <input type="text" id="attendanceManualUsername" required placeholder="Enter your Employee ID" class="w-full p-4 bg-black/40 border border-[#E6B950]/60 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-[#E6B950]" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-[#E6B950]">4 Digit PIN</label>
+                            <input type="password" id="attendanceManualPassword" required placeholder="Enter your 4 Digit PIN" class="w-full p-4 bg-black/40 border border-[#E6B950]/60 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-[#E6B950]" />
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl font-black text-black text-lg bg-gradient-to-r from-[#C99A2E] via-[#D4AF37] to-[#E6B950] shadow-[0_0_25px_rgba(230,185,80,0.35)]">
+                            Continue
+                        </button>
+                    </form>
+                    <button type="button" onclick="resetAttendanceKioskToScan()" class="block mx-auto mt-4 text-[#E6B950] underline underline-offset-8 text-sm sm:text-base hover:text-[#F4D878]">
+                        Back to Face Scan
+                    </button>
+                </div>
+
+                <!-- Identified staff: Clock In / Clock Out -->
+                <div id="attendanceResultView" class="hidden">
+                    <img id="attendanceResultPhoto" src="" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover mx-auto border-4 border-[#E6B950] shadow-lg mb-4">
+                    <h3 id="attendanceResultName" class="text-xl sm:text-2xl font-black text-white uppercase mb-1">—</h3>
+                    <p id="attendanceResultStatusText" class="text-gray-300 text-sm sm:text-base mb-6">—</p>
+                    <div class="flex gap-4 max-w-md mx-auto">
+                        <button type="button" id="attendanceClockInBtn" onclick="submitAttendanceClock('in')" class="flex-1 py-3.5 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-gradient-to-r from-emerald-500 to-emerald-700 text-white shadow-md hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100">
+                            Clock In
+                        </button>
+                        <button type="button" id="attendanceClockOutBtn" onclick="submitAttendanceClock('out')" class="flex-1 py-3.5 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100">
+                            Clock Out
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+
+<!-- Location Selection -->
+
+   <div id="locationSection" class="hidden min-h-screen w-full bg-[#0A0700] text-gray-100 flex flex-col items-center justify-center font-roboto p-6 relative overflow-hidden">
+    <!-- Background Luxury Subtle Ambient Glows -->
+   <div class="w-full max-w-[95vw] 2xl:max-w-[2400px] border border-[#E6B950]/30 rounded-[24px] sm:rounded-[32px] p-5 sm:p-8 lg:p-10 backdrop-blur-sm bg-black/30 shadow-[0_0_40px_rgba(230,185,80,0.12)] my-auto">
+    <!-- Header Block -->
+    <div class="text-center mb-8 relative z-10">
+        <img 
+    src="AMSONS.png"
+    alt="Amsons"
+    class="mx-auto w-[150px] sm:w-[190px] md:w-[230px] max-w-full h-auto object-contain"/>
+
+  <p class="text-[#E6B950] text-md sm:text-sm tracking-[0.30em] uppercase mt-15">
+    Select Shop Branch
+  </p>
+    </div>
+
+    <!-- 5-Card Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 w-full z-10 px-4">
+        
+        <!-- Card 1: Amsons Small Heath -->
+        <button onclick="selectTerminalLocation('Amsons SmallHeath')" class="group relative bg-[#120E05] border border-[#E6B950]/30 hover:border-[#E6B950] rounded-[24px] overflow-hidden text-left transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_35px_rgba(230,185,80,0.2)] flex flex-col min-h-[380px]">
+            <!-- Top Half Large Image Slot -->
+            <div class="w-full h-44 bg-black/40 border-b border-[#E6B950]/20 flex items-center justify-center overflow-hidden relative group-hover:border-[#E6B950]/40 transition-all duration-300">
+                <img src="amsonsSmallHeath.jpg" alt="Small Heath" class="w-full h-full object-cover fallback-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hidden absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#120E05] to-black">
+                    <span class="text-[#E6B950] font-bold text-3xl uppercase tracking-widest opacity-60">CV</span>
+                </div>
+            </div>
+            <!-- Bottom Half Content Slot -->
+            <div class="p-6 flex flex-col flex-1 justify-between">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-white group-hover:text-[#E6B950] transition-colors duration-200">Amsons Small Heath</h3>
+                </div>
+                <div class="text-xs sm:text-sm tracking-widest text-[#E6B950]/80 uppercase font-mono mt-6 flex items-center font-bold">
+                    Initialize Stream <span class="ml-2 transform group-hover:translate-x-2 transition-transform duration-200">→</span>
+                </div>
+            </div>
+        </button>
+
+        <!-- Card 2: Amsons Alumrock -->
+        <button onclick="selectTerminalLocation('Amsons AlumRock')" class="group relative bg-[#120E05] border border-[#E6B950]/30 hover:border-[#E6B950] rounded-[24px] overflow-hidden text-left transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_35px_rgba(230,185,80,0.2)] flex flex-col min-h-[380px]">
+            <!-- Top Half Large Image Slot -->
+            <div class="w-full h-44 bg-black/40 border-b border-[#E6B950]/20 flex items-center justify-center overflow-hidden relative group-hover:border-[#E6B950]/40 transition-all duration-300">
+                <img src="amsonsAlumrock.webp" alt="Alumrock" class="w-full h-full object-cover fallback-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hidden absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#120E05] to-black">
+                    <span class="text-[#E6B950] font-bold text-3xl uppercase tracking-widest opacity-60">AR</span>
+                </div>
+            </div>
+            <!-- Bottom Half Content Slot -->
+            <div class="p-6 flex flex-col flex-1 justify-between">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-white group-hover:text-[#E6B950] transition-colors duration-200">Amsons Alumrock</h3>
+                </div>
+                <div class="text-xs sm:text-sm tracking-widest text-[#E6B950]/80 uppercase font-mono mt-6 flex items-center font-bold">
+                    Initialize Stream <span class="ml-2 transform group-hover:translate-x-2 transition-transform duration-200">→</span>
+                </div>
+            </div>
+        </button>
+
+        <!-- Card 3: Amsons Bradford -->
+        <button onclick="selectTerminalLocation('Amsons Bradford')" class="group relative bg-[#120E05] border border-[#E6B950]/30 hover:border-[#E6B950] rounded-[24px] overflow-hidden text-left transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_35px_rgba(230,185,80,0.2)] flex flex-col min-h-[380px]">
+            <!-- Top Half Large Image Slot -->
+            <div class="w-full h-44 bg-black/40 border-b border-[#E6B950]/20 flex items-center justify-center overflow-hidden relative group-hover:border-[#E6B950]/40 transition-all duration-300">
+                <img src="amsonsBradford.webp" alt="Bradford" class="w-full h-full object-cover fallback-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hidden absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#120E05] to-black">
+                    <span class="text-[#E6B950] font-bold text-3xl uppercase tracking-widest opacity-60">BD</span>
+                </div>
+            </div>
+            <!-- Bottom Half Content Slot -->
+            <div class="p-6 flex flex-col flex-1 justify-between">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-white group-hover:text-[#E6B950] transition-colors duration-200">Amsons Bradford</h3>
+                </div>
+                <div class="text-xs sm:text-sm tracking-widest text-[#E6B950]/80 uppercase font-mono mt-6 flex items-center font-bold">
+                    Initialize Stream <span class="ml-2 transform group-hover:translate-x-2 transition-transform duration-200">→</span>
+                </div>
+            </div>
+        </button>
+
+        <!-- Card 4: Amsons Warehouse -->
+        <button onclick="selectTerminalLocation('Amsons Warehouse')" class="group relative bg-[#120E05] border border-[#E6B950]/30 hover:border-[#E6B950] rounded-[24px] overflow-hidden text-left transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_35px_rgba(230,185,80,0.2)] flex flex-col min-h-[380px]">
+            <!-- Top Half Large Image Slot -->
+            <div class="w-full h-44 bg-black/40 border-b border-[#E6B950]/20 flex items-center justify-center overflow-hidden relative group-hover:border-[#E6B950]/40 transition-all duration-300">
+                <img src="amsonsWarehouse.jpeg" alt="Warehouse" class="w-full h-full object-cover fallback-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hidden absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#120E05] to-black">
+                    <span class="text-[#E6B950] font-bold text-3xl uppercase tracking-widest opacity-60">WH</span>
+                </div>
+            </div>
+            <!-- Bottom Half Content Slot -->
+            <div class="p-6 flex flex-col flex-1 justify-between">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-white group-hover:text-[#E6B950] transition-colors duration-200">Amsons Warehouse</h3>
+                </div>
+                <div class="text-xs sm:text-sm tracking-widest text-[#E6B950]/80 uppercase font-mono mt-6 flex items-center font-bold">
+                    Initialize Stream <span class="ml-2 transform group-hover:translate-x-2 transition-transform duration-200">→</span>
+                </div>
+            </div>
+        </button>
+
+        <!-- Card 5: Amsons Online -->
+        <button onclick="selectTerminalLocation('Amsons Online')" class="group relative bg-[#120E05] border border-[#E6B950]/30 hover:border-[#E6B950] rounded-[24px] overflow-hidden text-left transition-all duration-300 transform hover:-translate-y-2 hover:shadow-[0_0_35px_rgba(230,185,80,0.2)] flex flex-col min-h-[380px]">
+            <!-- Top Half Large Image Slot -->
+            <div class="w-full h-44 bg-black/40 border-b border-[#E6B950]/20 flex items-center justify-center overflow-hidden relative group-hover:border-[#E6B950]/40 transition-all duration-300">
+                <img src="amsonsOnline.png" alt="Amsons Online" class="w-full h-full object-cover fallback-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hidden absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#120E05] to-black">
+                    <span class="text-[#E6B950] font-bold text-3xl uppercase tracking-widest opacity-60">OS</span>
+                </div>
+            </div>
+            <!-- Bottom Half Content Slot -->
+            <div class="p-6 flex flex-col flex-1 justify-between">
+                <div>
+                    <h3 class="text-xl sm:text-2xl font-bold text-white group-hover:text-[#E6B950] transition-colors duration-200">Amsons Online</h3>
+                </div>
+                <div class="text-xs sm:text-sm tracking-widest text-[#E6B950]/80 uppercase font-mono mt-6 flex items-center font-bold">
+                    Initialize Stream <span class="ml-2 transform group-hover:translate-x-2 transition-transform duration-200">→</span>
+                </div>
+            </div>
+        </button>
+
+    </div>
+
+</div>
+
+<div class="w-full p-4 mt-6 static md:fixed md:bottom-4 md:left-4 md:right-auto md:w-auto md:p-0 md:mt-0 z-[99999]">
+    <button onclick="sessionToken=''; localStorage.removeItem('access_token'); location.reload();" 
+            title="Logout System Account"
+            class="group flex items-center justify-center gap-2 w-full md:w-auto bg-zinc-950/80 hover:bg-red-600/90 text-[#E6B950] hover:text-white text-[11px] font-black uppercase tracking-widest px-4 py-3.5 md:pl-3 md:pr-3.5 md:py-2 rounded-xl border border-[#E6B950]/30 hover:border-red-600 shadow-[0_8px_30px_rgb(0,0,0,0.3)] md:shadow-[0_8px_30px_rgb(0,0,0,0.5)] backdrop-blur-md transition-all duration-300 scale-100 md:scale-95 md:hover:scale-100 active:scale-95 md:active:scale-90 focus:outline-none">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4 md:w-3.5 md:h-3.5 transition-transform group-hover:rotate-12">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+
+        <span class="font-sans antialiased text-xs md:text-[11px]">Logout</span>
+    </button>
+</div>
+
+</div>
+
+ 
+
+
+
+
+
+
+
+<!-- Dashboard -->
+
+   <div id="dashboardSection" class="hidden min-h-screen bg-[#F7F5EF] text-zinc-950 flex flex-col w-full font-sans antialiased overflow-x-hidden select-none">
+    
+<header class="w-full bg-[#0D0A04] text-white px-4 sm:px-6 py-2 flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_672px_minmax(0,1fr)] items-center justify-between gap-2 lg:gap-0 shrink-0 border-b-2 border-[#E6B950] rounded-b-2xl shadow-xl relative">
+    <div class="flex items-center justify-between lg:justify-start w-full lg:w-auto gap-4 sm:gap-3">
+        <div class="flex items-center gap-2 sm:gap-3 lg:gap-4 shrink min-w-0">
+            <img src="AMSONS.png" alt="Amsons Logo" class="h-12 sm:h-16 md:h-20 lg:h-24 xl:h-28 w-auto shrink-0">
+            <div class="border-l border-[#E6B950]/30 pl-2 sm:pl-3 lg:pl-4 flex items-center gap-3 min-w-0">
+                <img id="dashboardLocationImg" src="" alt="Location Status" class="hidden w-10 h-10 rounded-full object-cover border border-[#E6B950] shadow-[0_0_8px_rgba(230,185,80,0.3)]">
+                <div class="min-w-0">
+                    <h1 id="dashboardLocationTitle" class="text-base sm:text-lg lg:text-2xl font-black tracking-wider text-[#E6B950] uppercase leading-none font-sans whitespace-nowrap">AMSONS</h1>
+                    <span class="text-[7px] sm:text-[8px] lg:text-[11px] text-zinc-400 font-bold tracking-normal sm:tracking-wide lg:tracking-widest uppercase mt-1 block whitespace-nowrap">INVENTORY MANAGEMENT SYSTEM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logout: only shown on tablet, sidebar's logout covers mobile + desktop -->
+        <button type="button" onclick="sessionToken=''; localStorage.removeItem('access_token'); location.reload();" title="Logout System Account"
+                class="hidden sm:flex lg:hidden sm:justify-self-end shrink-0 items-center gap-2 bg-zinc-950/80 hover:bg-red-600/90 text-[#E6B950] hover:text-white text-xs font-black uppercase tracking-widest px-4 py-2.5 rounded-xl border border-[#E6B950]/30 hover:border-red-600 shadow-md backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-4 h-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            Logout
+        </button>
+    </div>
+
+    <!-- Search bar + AI Cam: always in the navbar, never moved to the sidebar -->
+    <div class="w-full lg:w-full flex items-center gap-2 lg:gap-3">
+        <div class="relative w-full">
+            <input type="text"
+                    id="mobileHeaderSearchInput"
+                    oninput="handleBarcodeSearchStreamInput(this.value, 'mobileHeaderSearchInput')"
+                    autocomplete="off"
+                    placeholder="Search item / Barcode"
+                    class="w-full bg-white text-zinc-900 pl-8 lg:pl-11 pr-3 lg:pr-4 py-1 lg:py-2.5 rounded-lg lg:rounded-xl border border-zinc-300 font-sans text-xs lg:text-base shadow-inner focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            <div class="absolute inset-y-0 left-0 pl-2.5 lg:pl-3.5 flex items-center pointer-events-none">
+                <svg class="h-3.5 w-3.5 lg:h-5 lg:w-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+            <div id="mobileSearchResultsDropdown" class="hidden absolute left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-lg shadow-2xl z-[9999] max-h-72 overflow-y-auto"></div>
+        </div>
+
+        <!-- AI Cam: live product recognition widget -->
+        <button type="button" onclick="toggleAiCamWidget()" id="aiCamToggleBtn" title="AI Product Camera"
+                class="relative shrink-0 w-8 h-8 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl overflow-hidden border-2 border-[#E6B950] bg-black flex items-center justify-center shadow-[0_0_10px_rgba(230,185,80,0.35)] hover:shadow-[0_0_16px_rgba(230,185,80,0.55)] transition-all">
+            <video id="aiCamVideoFeed" autoplay playsinline muted class="hidden w-full h-full object-cover"></video>
+            <span id="aiCamIdleIcon" class="text-xs lg:text-lg">📷</span>
+            <span id="aiCamLiveDot" class="hidden absolute top-0.5 right-0.5 lg:top-1 lg:right-1 w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.9)]"></span>
+            <canvas id="aiCamCaptureCanvas" class="hidden"></canvas>
+        </button>
+    </div>
+
+    <!-- Anchor: actions cluster docks here on desktop, sidebar below that -->
+    <div id="headerClusterAnchor" class="hidden lg:contents"></div>
+
+    <div id="newProductRoutingRegistrationModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[99999] hidden flex items-center justify-center p-4 md:p-8 font-sans">
+    <div class="bg-white text-zinc-900 border-4 border-[#E6B950] w-full max-w-2xl rounded-3xl shadow-[0_30px_70px_-15px_rgba(0,0,0,0.5)] overflow-hidden animate-fade-in transition-all">
+        
+        <div class="bg-zinc-900 px-8 py-6 border-b-4 border-[#E6B950] flex items-center justify-between">
+            <div>
+                <h3 class="text-2xl md:text-3xl font-black uppercase tracking-widest text-[#E6B950]">Product Code Not Found</h3>
+                <p class="text-xs md:text-sm font-bold text-zinc-400 uppercase mt-0.5 tracking-wider">System Scan Security Registry Routing Node</p>
+            </div>
+            <button type="button" onclick="closeNewProductModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-2xl md:text-3xl p-2 focus:outline-none transition-colors">✕</button>
+        </div>
+
+        <div class="p-8 md:p-10 text-center space-y-8 bg-white">
+            
+            <div class="w-24 h-24 bg-amber-50 text-amber-500 border-4 border-amber-300 rounded-full flex items-center justify-center text-5xl mx-auto shadow-inner animate-bounce">
+                ⚠️
+            </div>
+
+            <div class="space-y-4">
+                <h4 class="text-3xl font-black text-zinc-900 uppercase tracking-tight">This Product Is Not Available In Our System</h4>
+                <p class="text-base md:text-lg font-bold text-zinc-600 max-w-lg mx-auto leading-relaxed">
+                    To integrate this product into active ledger records, you need to navigate to the sidebar menu and select the <span class="text-zinc-950 font-black underline decoration-[#E6B950] decoration-2">Stock In</span> registry pipeline. 
+                </p>
+                <p class="text-lg md:text-xl font-black text-zinc-900 pt-2 tracking-wide">
+                    Would you like to initiate the Stock In process for this item now?
+                </p>
+            </div>
+
+            <div class="bg-zinc-100 border-2 border-zinc-200 p-4 rounded-xl max-w-md mx-auto">
+                <span class="text-xs font-black uppercase text-zinc-500 block tracking-widest mb-1">Scanned Code Token ID</span>
+                <span id="unresolvedBarcodeBadge" class="text-xl md:text-2xl font-mono font-black text-red-600 tracking-wider">----------------</span>
+            </div>
+
+            <div class="border-t border-zinc-200 pt-8 flex flex-col sm:flex-row justify-center items-center gap-4">
+                <button type="button" onclick="closeNewProductModal()" class="w-full sm:w-auto bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-base font-black uppercase tracking-widest py-4 px-8 rounded-xl border-2 border-zinc-300 transition-all">
+                    No, Cancel
+                </button>
+                <button type="button" onclick="handleDirectStockInRoutingForwarding()" class="w-full sm:w-auto bg-[#050608] hover:bg-zinc-900 text-[#E6B950] hover:text-[#F4D878] border-2 border-[#E6B950] text-lg font-black uppercase tracking-widest py-4 px-10 rounded-xl shadow-[0_10px_25px_-5px_rgba(230,185,80,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all duration-200">
+                    Yes, Stock In ⇩
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+</header>
+
+    <div class="flex flex-1 w-full relative overflow-hidden">
+        
+       
+       
+       
+       
+       
+       
+        <!-- Sidebar navigation -->
+
+        <div id="sidebarOverlay"
+  onclick="closeMainSidebar()"
+  class="hidden fixed inset-0 bg-black/60 z-40"
+></div>
+
+
+<aside
+  id="mainSidebar"
+  class="fixed top-0 left-0 z-50 w-[270px] bg-[#050608] text-white min-h-screen h-screen flex flex-col justify-between border-r-2 border-[#E6B950]/60 rounded-tr-3xl rounded-br-3xl -translate-x-full transition-transform duration-500 ease-in-out overflow-y-auto scrollbar-none"
+>
+
+  <div>
+
+    <div class="p-7">
+
+      <!-- Anchor: notification/profile live here below desktop, moved to the header above that -->
+      <div id="sidebarClusterAnchor" class="lg:hidden mb-6 pb-6 border-b border-white/10">
+        <div id="headerActionsCluster" class="flex flex-col lg:flex-row lg:items-center lg:justify-end gap-3 lg:gap-6 w-full lg:w-auto lg:justify-self-end">
+            <div class="flex items-center justify-between lg:justify-end gap-4 sm:gap-6 w-full lg:w-auto shrink-0">
+                <!-- 🔔 NOTIFICATION ENGINE CONTAINER -->
+                <div class="relative">
+                    <button type="button" onclick="toggleNotificationDropdown()" class="p-2 lg:p-2.5 bg-zinc-900 border border-zinc-800 rounded-xl relative hover:border-[#E6B950]/50 transition active:scale-95">
+                        <svg class="w-5 h-5 lg:w-6 lg:h-6 text-[#E6B950]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span id="notificationBadgeCount" class="absolute -top-1 -right-1 bg-red-600 text-white font-black text-[9px] lg:text-[10px] w-4 h-4 lg:w-5 lg:h-5 rounded-full flex items-center justify-center border-2 border-[#0D0A04]">3</span>
+                    </button>
+
+                    <!-- Notification Dropdown Menu -->
+                    <div id="notificationDropdownMenu" class="hidden absolute left-0 lg:left-auto lg:right-0 mt-3 w-72 sm:w-80 bg-[#120E05] border-2 border-[#E6B950]/30 rounded-2xl shadow-2xl z-[999] overflow-hidden font-sans">
+                        <div class="p-4 border-b border-[#E6B950]/20 bg-black/40 flex justify-between items-center">
+                            <span class="text-xs font-black tracking-wider text-[#E6B950] uppercase">System Live Alerts</span>
+                            <button onclick="clearAllNotifications()" class="text-[10px] uppercase tracking-widest text-zinc-400 hover:text-red-400 font-bold">Clear All</button>
+                        </div>
+                        <div id="notificationListWrapper" class="divide-y divide-zinc-800/60 max-h-64 overflow-y-auto"></div>
+                    </div>
+                </div>
+
+                <!-- 👤 HEADER USER PROFILE WIDGET -->
+                <button type="button" onclick="openProfileManagementModal()" class="flex items-center gap-3 border-l border-zinc-800 pl-4 text-left group focus:outline-none active:scale-95 transition">
+                    <div class="text-right">
+                        <h4 id="headerUserName" class="text-xs lg:text-sm font-black text-white tracking-wide group-hover:text-[#E6B950] transition">Loading...</h4>
+                        <span id="headerUserRole" class="text-[8px] lg:text-[9px] font-bold text-[#E6B950] tracking-widest block uppercase">Staff Terminal</span>
+                    </div>
+                    <div class="relative">
+                        <img id="headerUserAvatar" src="amFace.png" alt="Profile Avatar" class="w-9 h-9 lg:w-11 lg:h-11 rounded-full object-cover border-2 border-[#E6B950] shadow-[0_0_10px_rgba(230,185,80,0.25)] group-hover:scale-105 transition">
+                        <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-[#0D0A04]"></div>
+                    </div>
+                </button>
+            </div>
+        </div>
+      </div>
+
+      <nav class="space-y-5">
+
+        <button class="w-full flex items-center gap-4 px-5 py-4 rounded-xl bg-[#E6B950] text-black font-bold text-lg">
+          <span class="text-2xl">⌂</span>
+                        <span>Dashboard</span>
+        </button>
+
+        <button type="button" onclick="openScannerWorkflowModal('IN')" class="w-full flex items-center gap-4 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-lg">
+          <span class="text-2xl text-[#E6B950]">⇩</span>
+                        <span>Stock In</span>
+        </button>
+
+        <button type="button" onclick="openScannerWorkflowModal('OUT')" class="w-full flex items-center gap-4 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-lg">
+          <span class="text-2xl text-[#E6B950]">⇧</span>
+                        <span>Stock Out</span>
+        </button>
+
+        <button type="button" onclick="openScannerWorkflowModal('MOVE')" class="w-full flex items-center gap-4 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-lg transition-colors">
+         <span class="text-2xl text-[#E6B950]">⇄</span>
+                        <span>Stock Move</span>
+        </button>
+
+        <button type="button" onclick="loadStockHistorySection()" class="w-full flex items-center gap-4 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-lg transition-colors">
+    <span class="text-2xl text-[#E6B950]">⌕</span>
+    <span>Stock History</span>
+</button>
+
+        <button type="button" onclick="openProductListModal()" class="w-full flex items-center gap-4 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-lg">
+          <span class="text-2xl text-[#E6B950]">▤</span>
+                        <span>Product List</span>
+        </button>
+
+        <button type="button" id="yourAttendanceBtn" onclick="openStaffAttendanceKiosk()" class="hidden sidebar-soft-glow-btn w-full flex items-center justify-center gap-2 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-sm whitespace-nowrap rounded-xl border border-[#E6B950]/40">
+                        <span class="text-lg text-[#E6B950]">&#128340;</span>
+                        <span>Your Attendance</span>
+        </button>
+
+        <button type="button" id="storeManagementBtn" onclick="openStoreManagementSection()" class="sidebar-soft-glow-btn w-full flex items-center justify-center gap-2 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-sm whitespace-nowrap rounded-xl border border-[#E6B950]/40">
+                        <span class="text-lg text-[#E6B950]">&#127980;</span>
+                        <span>Store Management</span>
+        </button>
+
+        <button type="button" id="tillManagementBtn" onclick="openTillManagementHub()" class="hidden sidebar-soft-glow-btn w-full flex items-center justify-center gap-2 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-sm whitespace-nowrap rounded-xl border border-[#E6B950]/40">
+                        <span class="text-lg text-[#E6B950]">&#129534;</span>
+                        <span>Till Management</span>
+        </button>
+
+        <div class="border-t border-white/20 my-6"></div>
+
+        <button type="button" onclick="openPrintListSection()" class="w-full flex items-center gap-4 px-5 py-3 text-white hover:text-[#E6B950] font-semibold text-lg">
+          <span class="text-2xl text-[#E6B950]">▤</span>
+                        <span>Print List</span>
+        </button>
+
+      </nav>
+
+    </div>
+
+  </div>
+
+<div class="w-full p-5 flex sm:hidden lg:flex justify-center">
+    <button onclick="sessionToken=''; localStorage.removeItem('access_token'); location.reload();"
+            title="Logout System Account"
+            class="group flex items-center justify-center gap-2 w-full max-w-[220px] bg-zinc-950/80 hover:bg-red-600/90 text-[#E6B950] hover:text-white text-sm font-black uppercase tracking-widest px-6 py-3.5 rounded-xl border border-[#E6B950]/30 hover:border-red-600 shadow-[0_8px_30px_rgb(0,0,0,0.4)] backdrop-blur-md transition-all duration-300 hover:scale-105 active:scale-95 focus:outline-none">
+
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5 transition-transform group-hover:rotate-12">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+
+        <span class="font-sans antialiased text-sm">Logout</span>
+    </button>
+</div>
+
+
+</aside>
+
+
+
+        <!-- Main dashboard content -->
+        <main id="dashboardMainContent" class="flex-1 p-2 overflow-y-auto space-y-10 transition-[margin] duration-500 ease-in-out">
+         <!-- REAL-TIME COMPACT WIDGET (DASHBOARD HEADER LAYER) -->
+            <div class="w-full flex items-center justify-between mb-4 font-sans px-1">
+                <div class="flex items-center gap-2 shrink-0">
+                    <!-- Back to Branch Selection: fixed in place (no bounce), always visible. -->
+                    <button type="button" id="backToBranchesBtn" onclick="backToBranchSelection()"
+      class="flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#E6B950] bg-[#050608] text-[#E6B950] hover:bg-black transition-colors active:scale-90"
+      title="Back to Branch Selection">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" />
+                        </svg>
+                    </button>
+
+                    <!-- Sidebar toggle: sidebar starts closed on every screen size -->
+                    <button type="button" id="sidebarReopenBtn" onclick="handleSidebarReopenClick()"
+      class="flex shrink-0 items-center justify-center w-8 h-8 rounded-lg border border-[#E6B950] bg-[#050608] text-[#E6B950] hover:bg-black animate-bounce transition-colors active:scale-90"
+      title="Open Sidebar / Menu">
+                        <svg id="sidebarReopenIcon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- AI Cam status: small centered strip instead of intrusive popups -->
+                <div class="flex-1 min-w-0 text-center px-2">
+                    <span id="aiCamAmbientStatus" class="text-[10px] sm:text-xs text-zinc-400 font-medium tracking-wide truncate inline-block max-w-full align-middle"></span>
+                </div>
+
+                <div class="shrink-0 flex flex-col items-center md:items-end justify-center md:justify-end">
+                    <div class="text-center md:text-right text-zinc-900 text-xs font-medium tracking-wider flex items-center justify-center md:justify-end gap-2 uppercase">
+                        <!-- Live Clock Display -->
+                        <span id="liveDashboardClock">00:00:00 AM</span>
+
+                        <!-- Separator Dot -->
+                        <span class="text-zinc-400 select-none">•</span>
+
+                        <!-- Dynamic Calendar Meta Data -->
+                        <span id="liveDashboardDate">Loading Terminal Date...</span>
+                    </div>
+                </div>
+            </div>
+
+          <!-- Dashboard metrics: one grid, first 6 cards are management/admin only -->
+<section class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+
+    <div onclick="openDashboardMetricModal('sale')" title="View Sales" class="mgmt-metric-card hidden aspect-[7/6] bg-gradient-to-br from-[#005A8C] to-[#011F42] text-white p-2.5 rounded-xl shadow-xl border border-sky-400/20 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-sky-200">Sale</span>
+            <h3 id="statTotalSaleToday" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-sky-200/70">Sold Today 💰</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('topSelling')" title="View Top Selling Products" class="mgmt-metric-card hidden aspect-[7/6] bg-gradient-to-br from-[#5C1F94] to-[#2E0A52] text-white p-2.5 rounded-xl shadow-xl border border-purple-400/20 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-purple-200">Top Selling</span>
+            <h3 id="statTopSellingProductCount" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-purple-200/70">Top Sold Products 📈</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('mustStock')" title="View Next Month Must-Stock Forecast" class="mgmt-metric-card hidden aspect-[7/6] bg-gradient-to-br from-[#0B7A6E] to-[#043B34] text-white p-2.5 rounded-xl shadow-xl border border-teal-400/20 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-3">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-teal-200">Must Stock</span>
+            <div class="mx-auto w-12 h-12 md:w-14 md:h-14 rounded-lg overflow-hidden shadow-lg bg-white flex flex-col shrink-0">
+                <div class="bg-red-600 h-2 md:h-2.5 shrink-0"></div>
+                <div class="flex-1 flex items-center justify-center text-zinc-900 font-black text-sm md:text-base uppercase tracking-wide">
+                    <span id="mustStockNextMonthLabel">—</span>
+                </div>
+            </div>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-teal-200/70">Next Month 🔮</span>
+        </div>
+    </div>
+
+
+    <div id="totalItemsCard" onclick="openDashboardMetricModal('items')" title="View History" class="staff-only-card aspect-[7/6] bg-gradient-to-br from-[#1B5E20] to-[#0B3010] text-white p-2.5 rounded-xl shadow-xl border border-emerald-500/20 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-emerald-200">Total Items</span>
+            <h3 id="statTotalItems" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-emerald-300/70">All Products 📦</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('stockIn')" title="View History" class="aspect-[7/6] bg-gradient-to-br from-[#C9A227] to-[#7A5C15] text-white p-2.5 rounded-xl shadow-xl border border-[#8a6215]/30 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-white/80">Total Stock In</span>
+            <h3 id="statTotalStockIn" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-white/70">Total Entries 📥</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('stockOut')" title="View History" class="aspect-[7/6] bg-gradient-to-br from-[#B8540A] to-[#7A3300] text-white p-2.5 rounded-xl shadow-xl border border-amber-500/20 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-amber-100">Total Stock Out</span>
+            <h3 id="statTotalStockOut" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-amber-200/70">Dispatched 📤</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('transfers')" title="View History" class="aspect-[7/6] bg-gradient-to-br from-[#18181b] to-[#000000] text-white p-2.5 rounded-xl shadow-xl border border-zinc-700/30 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-zinc-400">Total Transfers</span>
+            <h3 id="statTotalTransfers" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-zinc-500">Inter-Location 🔄</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('lowStock')" title="View History" class="aspect-[7/6] bg-gradient-to-br from-[#B0221F] to-[#7A0000] text-white p-2.5 rounded-xl shadow-xl border border-red-400/20 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-red-100">Total Low Stock</span>
+            <h3 id="statTotalLowStock" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-red-200/70">Needs Reorder ⚠️</span>
+        </div>
+    </div>
+
+    <div onclick="openDashboardMetricModal('outOfStock')" title="View History" class="aspect-[7/6] bg-gradient-to-br from-[#8B0000] to-[#4D0000] text-white p-2.5 rounded-xl shadow-xl border border-red-700/30 relative overflow-hidden group hover:scale-[1.03] active:scale-95 transition-all duration-300 cursor-pointer">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-red-200">Total Out of Stock</span>
+            <h3 id="statTotalOutOfStock" class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">0</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-red-100/70">Zero Quantity 🚫</span>
+        </div>
+    </div>
+
+    <!-- AMS-0000-only cards, always placed last -->
+    <div onclick="openStockroomsBranchPicker()" title="View Stockrooms" class="ams0000-only-card hidden aspect-[7/6] bg-gradient-to-br from-[#A61E4D] to-[#5C0F2A] text-white p-2.5 rounded-xl shadow-xl border border-pink-400/20 relative overflow-hidden cursor-pointer group hover:scale-[1.03] active:scale-95 transition-all duration-300">
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-pink-200">Stockrooms</span>
+            <h3 class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">🏬</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-pink-200/70">View By Branch</span>
+        </div>
+    </div>
+
+    <div title="Coming soon" class="ams0000-only-card hidden aspect-[7/6] bg-gradient-to-br from-[#2A0876] to-[#150030] text-white p-2.5 rounded-xl shadow-xl border border-indigo-400/20 relative overflow-hidden">
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-indigo-200">Store</span>
+            <h3 class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">🏪</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-indigo-200/70">Coming Soon ✨</span>
+        </div>
+    </div>
+
+    <div onclick="openTillManagementHub()" title="Sales & Register" class="ams0000-only-card hidden aspect-[7/6] bg-gradient-to-br from-[#8A6800] to-[#4D3900] text-white p-2.5 rounded-xl shadow-xl border border-yellow-400/20 relative overflow-hidden cursor-pointer group hover:scale-[1.03] active:scale-95 transition-all duration-300">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-yellow-100">TILL</span>
+            <h3 class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">🧾</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-yellow-100/70">Sales & Register</span>
+        </div>
+    </div>
+
+    <div onclick="openStaffAttendanceAdminPanel()" title="Staff Attendance Records" class="ams0000-only-card hidden aspect-[7/6] bg-gradient-to-br from-[#4B4B4F] to-[#1C1C1E] text-white p-2.5 rounded-xl shadow-xl border border-zinc-400/20 relative overflow-hidden cursor-pointer group hover:scale-[1.03] active:scale-95 transition-all duration-300">
+        <span class="absolute top-2 right-2 w-5 h-5 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-[10px] shrink-0 animate-pulse group-hover:scale-110 transition-transform">🔍</span>
+        <div class="flex flex-col items-center justify-center text-center h-full gap-0.5">
+            <span class="text-base sm:text-lg font-black uppercase tracking-normal leading-none text-zinc-300">Staff Attendance</span>
+            <h3 class="text-5xl md:text-6xl font-black tracking-wider font-sans uppercase text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.55)]">🧑‍💼</h3>
+            <span class="text-[11px] sm:text-xs font-black uppercase tracking-widest text-zinc-300/70">View Records</span>
+        </div>
+    </div>
+</section>
+
+
+
+
+
+<div id="totalItemsDeepDiveModal" class="fixed inset-0 bg-zinc-950/80 backdrop-blur-md z-[99999] hidden flex items-center justify-center p-4 font-sans transition-all duration-300">
+    <div class="bg-white border-4 border-[#E6B950] w-full max-w-5xl rounded-3xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5)] flex flex-col h-[88vh] overflow-hidden">
+
+        <div class="bg-zinc-950 text-white px-6 py-5 flex items-center justify-between border-b-2 border-[#E6B950]">
+            <div>
+                <h2 id="dashboardMetricModalTitle" class="text-xl md:text-2xl font-black uppercase tracking-widest text-[#E6B950]">All Product Data Inventory</h2>
+                <p id="dashboardMetricModalSubtitle" class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">All Data by Time and Date</p>
+            </div>
+            <button onclick="closeTotalItemsDeepDiveModal()" class="bg-zinc-900 hover:bg-red-600 border border-zinc-800 text-[#E6B950] hover:text-white font-black text-sm px-4 py-2 rounded-xl transition-all duration-200 focus:outline-none">
+                CLOSE REGISTRY ✕
+            </button>
+        </div>
+
+        <!-- Timeline tabs + print button -->
+        <div class="print:hidden bg-zinc-900 px-6 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800">
+            <div id="dashboardMetricTimelineTabs" class="flex items-center gap-2">
+                <button type="button" onclick="setDashboardMetricTimeline('daily')" id="dashboardMetricTabDaily" class="dashboard-metric-tab px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Daily (Last 3 Days)</button>
+                <button type="button" onclick="setDashboardMetricTimeline('weekly')" id="dashboardMetricTabWeekly" class="dashboard-metric-tab px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Weekly</button>
+                <button type="button" onclick="setDashboardMetricTimeline('monthly')" id="dashboardMetricTabMonthly" class="dashboard-metric-tab px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Monthly</button>
+            </div>
+            <button type="button" onclick="window.print()" class="bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 font-black text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition-all active:scale-95">
+                Print 🖨️
+            </button>
+        </div>
+
+        <div class="flex-1 bg-[#F4F4F5] p-6 overflow-y-auto space-y-8 scrollbar-thin">
+            <div id="dynamicChronologicalLogContainer" class="space-y-6">
+                </div>
+        </div>
+
+        <div class="bg-zinc-50 border-t border-zinc-200 px-6 py-4 flex flex-wrap justify-between items-center text-zinc-600 font-mono text-[11px] font-bold uppercase tracking-wider">
+        </div>
+    </div>
+</div>
+
+
+
+
+<!--Stock Room Cards -->
+
+     <section id="storeroomsSection" class="bg-white rounded-2xl shadow p-8 mt-8 border-4 border-[#E6B950]">
+  <h2 class="text-4xl font-black text-center text-black mb-2">STOCKROOMS</h2>
+  <p class="text-center text-gray-500 mb-10">Select a stockroom to view stock locations</p>
+
+<div id="storeroomCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+    <div class="col-span-full text-center text-gray-400 font-bold uppercase text-sm">Loading stockrooms...</div>
+</div>
+</section>
+
+<!-- Create Stockroom Modal -->
+<div id="createStoreroomModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 id="createStoreroomModalTitle" class="text-lg font-black uppercase tracking-widest text-[#E6B950]">New Stockroom</h3>
+            <button type="button" onclick="closeCreateStoreroomModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Stockroom Name</label>
+                <input id="createStoreroomNameInput" type="text" placeholder="e.g. Stockroom 1" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeCreateStoreroomModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="createStoreroomSubmitBtn" onclick="submitCreateStoreroom()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Shelf / Row / Column / Walkway Modal -->
+<div id="storeroomStructureModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 id="storeroomStructureModalTitle" class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Add Shelf</h3>
+            <button type="button" onclick="closeStoreroomStructureModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div id="storeroomStructureShelfPickerRow" class="hidden">
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Target Shelf</label>
+                <select id="storeroomStructureShelfPicker" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]"></select>
+            </div>
+            <div>
+                <label id="storeroomStructureLabelFieldLabel" class="text-xs font-black uppercase text-zinc-500 block mb-1">Name</label>
+                <input id="storeroomStructureLabelInput" type="text" placeholder="e.g. A" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+            <div id="storeroomStructureColorRow">
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Color</label>
+                <input id="storeroomStructureColorInput" type="color" value="#E6B950" class="w-full h-11 border border-zinc-300 rounded-lg cursor-pointer">
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeStoreroomStructureModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="storeroomStructureSubmitBtn" onclick="submitStoreroomStructureModal()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Create</button>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Stockroom Map Section-->
+
+<section id="storeroomMapSection" class="hidden bg-white rounded-2xl shadow p-6 mt-8 text-black border-2 border-[#E6B950]">
+
+  <button onclick="backToStorerooms()" class="text-black font-bold mb-6">
+    ← Back to Stockrooms
+  </button>
+
+  <div id="storeroomBranchMismatchBanner" class="hidden mb-6 px-5 py-4 rounded-xl border-2 border-red-400 bg-red-50 text-red-700 font-bold text-sm"></div>
+
+  <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+    <div>
+      <h2 id="storeroomMapTitle" class="text-3xl lg:text-4xl font-black">STOCKROOM</h2>
+      <div class="flex flex-wrap gap-6 text-sm text-gray-700 mt-5">
+        <span>🏚 Shelves: <b id="storeroomStatShelves">0</b></span>
+        <span>▦ Rows: <b id="storeroomStatRows">0</b></span>
+        <span>📦 Columns: <b id="storeroomStatColumns">0</b></span>
+      </div>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="button" id="storeroomMapViewToggleBtn" onclick="showStoreroomMapView()" class="px-5 py-3 rounded-lg border border-black text-black font-bold">▦ Map View</button>
+      <button type="button" id="storeroomListViewToggleBtn" onclick="showStoreroomListView()" class="px-5 py-3 rounded-lg border border-black text-black font-bold">☷ List View</button>
+      <button type="button" onclick="window.print();" class="px-5 py-3 rounded-lg border border-gray-200 text-gray-700 font-bold">🖨️ Print</button>
+    </div>
+  </div>
+
+  <div id="storeroomMapGridWrapper" class="hidden">
+    <div class="map-legend mb-4">
+      <span><i class="dot good"></i> Good Stock</span>
+      <span><i class="dot low"></i> Low Stock</span>
+      <span><i class="dot out"></i> Out of Stock</span>
+      <span><i class="dot empty"></i> Empty</span>
+    </div>
+
+    <div class="storeroom-map-box" id="storeroomMapBox"></div>
+
+    <p class="text-sm text-gray-600 mt-4">ⓘ Click on any shelf slot to view its stock details.</p>
+  </div>
+
+  <div id="storeroomListViewWrapper" class="hidden"></div>
+
+  <div id="storeroomStructureActionsRow" class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200">
+    <button type="button" onclick="openAddShelfModal()" class="storeroom-add-btn">+ Add Shelf</button>
+    <button type="button" onclick="openAddRowModal()" class="storeroom-add-btn">+ Add Row</button>
+    <button type="button" onclick="openAddColumnModal()" class="storeroom-add-btn">+ Add Column</button>
+    <button type="button" onclick="openAddWalkwayModal()" class="storeroom-add-btn">+ Add Walkway</button>
+  </div>
+</section>
+
+<!-- Location Product List popup modal -->
+<div id="locationProductsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[99999] hidden flex items-center justify-center p-4 font-sans">
+    <div id="locationProductsModalCard" class="bg-white text-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-local-fade border border-zinc-200">
+        <!-- Header -->
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950] print:hidden">
+            <div>
+                <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]" id="modalLocationCodeTitle">LOCATION X00 PRODUCTS</h3>
+                <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Current Stock Ledger Matrix</p>
+            </div>
+            <button type="button" onclick="closeLocationProductsModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <!-- Print-only heading (hidden on screen, shows only in the printed page) -->
+        <h3 class="hidden print:block text-lg font-black uppercase tracking-widest text-zinc-900 px-6 pt-6" id="modalLocationCodeTitlePrint"></h3>
+
+        <!-- Product List Content -->
+        <div class="p-6 max-h-[400px] overflow-y-auto space-y-3" id="modalProductListContainer">
+            <!-- Products will be injected here dynamically -->
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2 print:hidden">
+            <button type="button" onclick="printElementOnly(document.getElementById('locationProductsModalCard'))" class="bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">
+                🖨 Print
+            </button>
+            <button type="button" onclick="closeLocationProductsModal()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">
+                Close Panel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- STORE (shop floor): same as the Stockroom modals/map above -->
+
+<!-- Create Store Section Modal -->
+<div id="createStoreSectionModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 id="createStoreSectionModalTitle" class="text-lg font-black uppercase tracking-widest text-[#E6B950]">New Store Section</h3>
+            <button type="button" onclick="closeCreateStoreSectionModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Store Section Name</label>
+                <input id="createStoreSectionNameInput" type="text" placeholder="e.g. Store Section 1" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeCreateStoreSectionModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="createStoreSectionSubmitBtn" onclick="submitCreateStoreSection()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Store Shelf / Row / Column / Walkway Modal -->
+<div id="storeStructureModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 id="storeStructureModalTitle" class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Add Shelf</h3>
+            <button type="button" onclick="closeStoreStructureModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div id="storeStructureShelfPickerRow" class="hidden">
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Target Shelf</label>
+                <select id="storeStructureShelfPicker" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]"></select>
+            </div>
+            <div>
+                <label id="storeStructureLabelFieldLabel" class="text-xs font-black uppercase text-zinc-500 block mb-1">Name</label>
+                <input id="storeStructureLabelInput" type="text" placeholder="e.g. A" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+            <div id="storeStructureColorRow">
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Color</label>
+                <input id="storeStructureColorInput" type="color" value="#E6B950" class="w-full h-11 border border-zinc-300 rounded-lg cursor-pointer">
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeStoreStructureModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="storeStructureSubmitBtn" onclick="submitStoreStructureModal()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- STORE MANAGEMENT: its own full-screen page, same design as Stockroom -->
+<div id="storeManagementSection" class="hidden min-h-screen w-full bg-[#F7F5EF] text-zinc-950 flex flex-col font-sans antialiased overflow-x-hidden">
+    <div class="shrink-0 bg-[#0D0A04] border-b-2 border-[#E6B950] px-4 sm:px-6 py-4 flex items-center gap-3">
+        <button type="button" onclick="closeStoreManagementSection()" class="flex shrink-0 items-center justify-center w-9 h-9 rounded-lg border border-[#E6B950] bg-black text-[#E6B950] hover:bg-zinc-900 transition-colors active:scale-90" title="Back to Dashboard">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" /></svg>
+        </button>
+        <h2 class="text-lg sm:text-xl font-black uppercase tracking-widest text-[#E6B950]">Store Management — <span id="storeManagementBranchLabel">—</span></h2>
+    </div>
+
+    <main class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-8">
+        <!-- Store Section cards, independent of the Stockroom -->
+        <section id="storeSectionsSection" class="bg-white rounded-2xl shadow p-8 border-4 border-[#E6B950]">
+          <h2 class="text-4xl font-black text-center text-black mb-2">STORE</h2>
+          <p class="text-center text-gray-500 mb-10">Select a store section to view shop-floor stock locations</p>
+
+          <div id="storeSectionCardsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+              <div class="col-span-full text-center text-gray-400 font-bold uppercase text-sm">Loading store sections...</div>
+          </div>
+        </section>
+
+        <!-- Store Section Map -->
+        <section id="storeSectionMapSection" class="hidden bg-white rounded-2xl shadow p-6 text-black border-2 border-[#E6B950]">
+
+          <button onclick="backToStoreSections()" class="text-black font-bold mb-6">
+            ← Back to Store
+          </button>
+
+          <div id="storeSectionBranchMismatchBanner" class="hidden mb-6 px-5 py-4 rounded-xl border-2 border-red-400 bg-red-50 text-red-700 font-bold text-sm"></div>
+
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h2 id="storeSectionMapTitle" class="text-3xl lg:text-4xl font-black">STORE SECTION</h2>
+              <div class="flex flex-wrap gap-6 text-sm text-gray-700 mt-5">
+                <span>🏚 Shelves: <b id="storeSectionStatShelves">0</b></span>
+                <span>▦ Rows: <b id="storeSectionStatRows">0</b></span>
+                <span>📦 Columns: <b id="storeSectionStatColumns">0</b></span>
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <button type="button" id="storeSectionMapViewToggleBtn" onclick="showStoreSectionMapView()" class="px-5 py-3 rounded-lg border border-black text-black font-bold">▦ Map View</button>
+              <button type="button" id="storeSectionListViewToggleBtn" onclick="showStoreSectionListView()" class="px-5 py-3 rounded-lg border border-black text-black font-bold">☷ List View</button>
+              <button type="button" onclick="window.print();" class="px-5 py-3 rounded-lg border border-gray-200 text-gray-700 font-bold">🖨️ Print</button>
+            </div>
+          </div>
+
+          <div id="storeSectionMapGridWrapper" class="hidden">
+            <div class="map-legend mb-4">
+              <span><i class="dot good"></i> Good Stock</span>
+              <span><i class="dot low"></i> Low Stock</span>
+              <span><i class="dot out"></i> Out of Stock</span>
+              <span><i class="dot empty"></i> Empty</span>
+            </div>
+
+            <div class="storeroom-map-box" id="storeSectionMapBox"></div>
+
+            <p class="text-sm text-gray-600 mt-4">ⓘ Click on any shelf slot to view its stock details.</p>
+          </div>
+
+          <div id="storeSectionListViewWrapper" class="hidden"></div>
+
+          <div id="storeSectionStructureActionsRow" class="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200">
+            <button type="button" onclick="openAddStoreShelfModal()" class="storeroom-add-btn">+ Add Shelf</button>
+            <button type="button" onclick="openAddStoreRowModal()" class="storeroom-add-btn">+ Add Row</button>
+            <button type="button" onclick="openAddStoreColumnModal()" class="storeroom-add-btn">+ Add Column</button>
+            <button type="button" onclick="openAddStoreWalkwayModal()" class="storeroom-add-btn">+ Add Walkway</button>
+          </div>
+        </section>
+    </main>
+</div>
+
+<!-- Store Location Product List popup modal -->
+<div id="storeLocationProductsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[99999] hidden flex items-center justify-center p-4 font-sans">
+    <div id="storeLocationProductsModalCard" class="bg-white text-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-local-fade border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950] print:hidden">
+            <div>
+                <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]" id="modalStoreLocationCodeTitle">LOCATION X00 PRODUCTS</h3>
+                <p class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Current Shop-Floor Stock</p>
+            </div>
+            <button type="button" onclick="closeStoreLocationProductsModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <h3 class="hidden print:block text-lg font-black uppercase tracking-widest text-zinc-900 px-6 pt-6" id="modalStoreLocationCodeTitlePrint"></h3>
+
+        <div class="p-6 max-h-[400px] overflow-y-auto space-y-3" id="modalStoreProductListContainer">
+        </div>
+
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2 print:hidden">
+            <button type="button" onclick="printElementOnly(document.getElementById('storeLocationProductsModalCard'))" class="bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">
+                🖨 Print
+            </button>
+            <button type="button" onclick="closeStoreLocationProductsModal()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">
+                Close Panel
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Set Low Stock Alert Threshold modal (management only) -->
+<div id="setAlertThresholdModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Set Low Stock Alert</h3>
+            <button type="button" onclick="closeSetAlertThresholdModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <p id="alertThresholdProductName" class="text-sm font-black text-zinc-800 uppercase"></p>
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Alert when quantity is at or below:</label>
+                <input id="alertThresholdInput" type="number" min="0" placeholder="e.g. 10" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+                <p class="text-[10px] text-zinc-400 mt-1">Leave empty and save to turn alerts off for this product.</p>
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeSetAlertThresholdModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="alertThresholdSaveBtn" onclick="submitSetAlertThreshold()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Cross-Branch Availability popup: shown when a product isn't at the current branch -->
+<div id="crossBranchAvailabilityModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <div>
+                <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Not Available Here</h3>
+                <p id="crossBranchModalSubtitle" class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5"></p>
+            </div>
+            <button type="button" onclick="closeCrossBranchAvailabilityModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6">
+            <p id="crossBranchProductName" class="text-base font-black text-zinc-900 uppercase mb-4"></p>
+            <p class="text-xs font-bold text-zinc-500 uppercase tracking-wide mb-3">Available at these branches instead:</p>
+            <div id="crossBranchCardsContainer" class="space-y-3 max-h-[360px] overflow-y-auto"></div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end">
+            <button type="button" onclick="closeCrossBranchAvailabilityModal()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Close</button>
+        </div>
+    </div>
+</div>
+
+        </main>
+    </div>
+</div>
+
+
+
+
+
+
+<!-- AI Cam detection alert popup -->
+<div id="aiCamDetectionModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-[999999] flex items-center justify-center p-4 font-sans animate-fade-in">
+    <div class="bg-[#0D0A04] border-2 border-[#E6B950] rounded-2xl w-full max-w-sm shadow-[0_0_40px_rgba(230,185,80,0.3)] overflow-hidden">
+        <div class="p-6 text-center space-y-3">
+            <div class="mx-auto w-14 h-14 rounded-full bg-[#E6B950]/10 border-2 border-[#E6B950] flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(230,185,80,0.3)]">🤖</div>
+            <h3 id="aiCamModalTitle" class="text-lg font-black text-[#E6B950] uppercase tracking-wide">Product Detected</h3>
+            <p id="aiCamModalBody" class="text-sm text-zinc-300 leading-relaxed"></p>
+        </div>
+        <div id="aiCamModalActions" class="p-4 bg-black/40 border-t border-[#E6B950]/20 flex flex-col sm:flex-row gap-2"></div>
+    </div>
+</div>
+
+<!-- Profile & Security Settings popup modal -->
+<div id="profileSettingsModal" class="hidden fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center z-[9999] p-4 font-sans animate-fade-in overflow-y-auto">
+    <div class="bg-[#0D0A04] w-full max-w-md border-2 border-[#E6B950] rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(230,185,80,0.2)] my-6">
+
+        <!-- Modal Head -->
+        <div class="p-4 bg-black/60 border-b border-[#E6B950]/30 flex justify-between items-center">
+            <h3 class="text-[#E6B950] text-sm font-black uppercase tracking-widest">Profile</h3>
+            <button onclick="closeProfileManagementModal()" class="text-zinc-400 hover:text-white font-black text-lg p-1">✕</button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-5 text-white">
+
+            <!-- Face Photo -->
+            <div class="flex flex-col items-center gap-3">
+                <div class="relative">
+                    <img id="modalProfilePhoto" src="amFace.png" alt="Profile Photo" class="w-24 h-24 rounded-full object-cover border-2 border-[#E6B950] shadow-[0_0_15px_rgba(230,185,80,0.3)]">
+                    <button type="button" onclick="openProfilePhotoCapture()" title="Change Photo" class="absolute bottom-0 right-0 bg-[#E6B950] text-black w-8 h-8 rounded-full flex items-center justify-center text-sm shadow-md hover:brightness-110 transition">
+                        📷
+                    </button>
+                </div>
+                <span class="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Face Recognition Photo</span>
+            </div>
+
+            <!-- Inline Photo Capture Zone (hidden until "Change Photo" is clicked) -->
+            <div id="profilePhotoCaptureZone" class="hidden space-y-3 bg-zinc-950 p-4 rounded-xl border border-[#E6B950]/30">
+                <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-zinc-800">
+                    <video id="profilePhotoWebcam" autoplay playsinline class="w-full h-full object-cover"></video>
+                    <canvas id="profilePhotoCanvas" class="hidden w-full h-full object-cover absolute inset-0"></canvas>
+                </div>
+                <p id="profilePhotoCaptureStatus" class="text-[10px] text-zinc-400 text-center font-mono">Starting camera...</p>
+                <div class="flex gap-2">
+                    <button type="button" id="profilePhotoCaptureBtn" onclick="captureNewProfilePhoto()" class="flex-1 bg-gradient-to-r from-[#C99A2E] to-[#E6B950] text-black font-black text-xs py-2.5 rounded-lg uppercase tracking-wider">
+                        Capture
+                    </button>
+                    <button type="button" id="profilePhotoRetakeBtn" onclick="retakeNewProfilePhoto()" class="hidden flex-1 bg-zinc-800 text-white font-bold text-xs py-2.5 rounded-lg uppercase tracking-wider">
+                        Retake
+                    </button>
+                    <button type="button" id="profilePhotoSaveBtn" onclick="saveNewProfilePhoto()" class="hidden flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs py-2.5 rounded-lg uppercase tracking-wider">
+                        Save Photo
+                    </button>
+                    <button type="button" onclick="closeProfilePhotoCapture()" class="flex-1 bg-zinc-900 border border-zinc-700 text-zinc-300 font-bold text-xs py-2.5 rounded-lg uppercase tracking-wider">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            <!-- Account Details / Editable Profile Fields -->
+            <div class="space-y-3 bg-zinc-950 p-4 rounded-xl border border-zinc-900 shadow-inner">
+                <div class="flex justify-between items-center border-b border-zinc-900 pb-2">
+                    <span class="text-[11px] text-zinc-500 uppercase font-bold">User System ID:</span>
+                    <span id="modalDisplayId" class="text-xs font-mono font-bold text-[#E6B950]">---</span>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Full Name</label>
+                    <input type="text" id="modalInputName" class="w-full bg-zinc-900 text-white py-2 px-3 rounded-lg border border-zinc-800 text-sm focus:outline-none focus:border-[#E6B950]">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Email Address</label>
+                    <input type="email" id="modalInputEmail" class="w-full bg-zinc-900 text-white py-2 px-3 rounded-lg border border-zinc-800 text-sm focus:outline-none focus:border-[#E6B950]">
+                </div>
+                <button type="button" onclick="executeProfileDetailsUpdate()" class="w-full bg-gradient-to-r from-[#E6B950] to-[#C99D36] text-black font-black text-xs py-2.5 rounded-xl uppercase tracking-widest hover:brightness-110 transition mt-1 shadow-md">
+                    💾 Save Changes
+                </button>
+            </div>
+
+            <!-- PIN Fields Section -->
+            <div class="space-y-3">
+                <h4 class="text-[11px] font-black uppercase tracking-wider text-[#E6B950]/80">Security Terminal PIN Configuration</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">Old Pin</label>
+                        <input type="password" id="modalInputOldPin" placeholder="••••" maxlength="4" inputmode="numeric" class="w-full bg-zinc-900 text-white text-center py-2 rounded-lg border border-zinc-800 text-sm focus:outline-none focus:border-[#E6B950]">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-zinc-400 uppercase mb-1">New Pin</label>
+                        <input type="password" id="modalInputNewPin" placeholder="••••" maxlength="4" inputmode="numeric" class="w-full bg-zinc-900 text-white text-center py-2 rounded-lg border border-zinc-800 text-sm focus:outline-none focus:border-[#E6B950]">
+                    </div>
+                </div>
+
+                <button type="button" onclick="executeSecurityPinUpdate()" class="w-full bg-gradient-to-r from-[#E6B950] to-[#C99D36] text-black font-black text-xs py-2.5 rounded-xl uppercase tracking-widest hover:brightness-110 transition mt-2 shadow-md">
+                    🔒 Change PIN
+                </button>
+            </div>
+
+            <hr class="border-zinc-900 my-1">
+
+            <!-- Danger Zone Action -->
+            <div class="p-3.5 bg-red-950/20 border border-red-900/30 rounded-xl space-y-2">
+                <label class="block text-[10px] font-bold text-red-400/80 uppercase mb-1">Enter PIN to confirm deletion</label>
+                <input type="password" id="modalDeleteConfirmPin" placeholder="••••" maxlength="4" inputmode="numeric" class="w-full bg-zinc-900 text-white text-center py-2 rounded-lg border border-red-900/50 text-sm focus:outline-none focus:border-red-500 mb-1">
+                <button type="button" onclick="executeAccountDeletionSequence()" class="w-full bg-red-900/20 border border-red-700/40 hover:bg-red-600 hover:text-white text-red-400 font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider transition">
+                    ⚠️ Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Stock History popup modal -->
+<div id="stockHistoryCentralSection" class="hidden fixed inset-0 z-[99999] overflow-hidden font-sans" role="dialog" aria-modal="true">
+    
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300" onclick="closeStockHistoryModal()"></div>
+
+    <div class="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+    
+        <div class="w-screen max-w-md sm:max-w-2xl md:max-w-4xl transform translate-x-full transition-transform duration-300 ease-in-out bg-zinc-950 text-white shadow-[0_0_60px_rgba(0,0,0,0.5)] flex flex-col h-full rounded-l-2xl md:rounded-l-3xl border-l-4 border-[#E6B950]">
+            
+    
+            <div class="px-5 py-4 md:px-8 md:py-6 bg-zinc-900 flex items-center justify-between border-b-4 border-[#E6B950] shrink-0">
+                <div>
+                    <h1 class="text-xl md:text-3xl font-black uppercase tracking-wider text-[#E6B950]">Stock Transaction History</h1>
+                    <p class="text-[10px] md:text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">Unified Multi-Batch Activity Log & Ledger Auditing System</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="window.print();" class="bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 font-black text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition-all active:scale-95">
+                        Print 🖨️
+                    </button>
+                    <button type="button" onclick="closeStockHistoryModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl md:text-3xl p-2 focus:outline-none transition-colors">✕</button>
+                </div>
+            </div>
+
+                    <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-zinc-900">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- DAILY LOGS -->
+                    <div class="space-y-4">
+                        <div class="bg-zinc-950 border-b-4 border-amber-500 px-4 py-2.5 rounded-t-xl flex justify-between items-center">
+                            <span class="text-sm font-black uppercase tracking-wide">Daily Logs</span>
+                            <span class="text-[10px] font-mono bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">Live Batch</span>
+                        </div>
+                        <div id="dailyHistoryCardFeed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- WEEKLY LOGS -->
+                    <div class="space-y-4">
+                        <div class="bg-zinc-950 border-b-4 border-white px-4 py-2.5 rounded-t-xl flex justify-between items-center">
+                            <span class="text-sm font-black uppercase tracking-wide">Weekly Logs</span>
+                            <span class="text-[10px] font-mono bg-white/10 text-white px-2 py-0.5 rounded border border-white/30">7 Days Cycle</span>
+                        </div>
+                        <div id="weeklyHistoryCardFeed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <!-- MONTHLY LOGS -->
+                    <div class="space-y-4">
+                        <div class="bg-zinc-950 border-b-4 border-emerald-500 px-4 py-2.5 rounded-t-xl flex justify-between items-center">
+                            <span class="text-sm font-black uppercase tracking-wide">Monthly Logs</span>
+                            <span class="text-[10px] font-mono bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">Archive</span>
+                        </div>
+                        <div id="monthlyHistoryCardFeed" class="space-y-4 max-h-[60vh] overflow-y-auto pr-1"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="p-4 bg-zinc-950 border-t border-zinc-800 flex justify-end shrink-0">
+                <button type="button" onclick="closeStockHistoryModal()" class="bg-zinc-800 hover:bg-zinc-700 text-white font-black text-xs uppercase tracking-wider py-3 px-6 rounded-xl transition-colors">
+                    Close History View
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Product List: all system products with photos -->
+<div id="productListCentralSection" class="hidden fixed inset-0 z-[99999] overflow-hidden font-sans" role="dialog" aria-modal="true">
+
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300" onclick="closeProductListModal()"></div>
+
+    <div class="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+        <div class="w-screen max-w-md sm:max-w-2xl md:max-w-4xl transform translate-x-full transition-transform duration-300 ease-in-out bg-white text-zinc-900 shadow-[0_0_60px_rgba(0,0,0,0.5)] flex flex-col h-full rounded-l-2xl md:rounded-l-3xl border-l-4 border-[#E6B950]">
+
+            <div class="px-5 py-4 md:px-8 md:py-6 bg-zinc-900 text-white flex items-center justify-between border-b-4 border-[#E6B950] shrink-0">
+                <div>
+                    <h1 class="text-xl md:text-3xl font-black uppercase tracking-wider text-[#E6B950]">Product List</h1>
+                    <p class="text-[10px] md:text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">All Products In System</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="openAddProductModal()" class="bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 font-black text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition-all active:scale-95">
+                        + Add Product
+                    </button>
+                    <button type="button" onclick="closeProductListModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl md:text-3xl p-2 focus:outline-none transition-colors">✕</button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-zinc-50">
+                <div id="productListGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Print list: today's stock activity, one card per entry -->
+<div id="printListCentralSection" class="hidden fixed inset-0 z-[99999] overflow-hidden font-sans" role="dialog" aria-modal="true">
+
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300" onclick="closePrintListSection()"></div>
+
+    <div class="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+        <div class="w-screen max-w-md sm:max-w-2xl md:max-w-4xl transform translate-x-full transition-transform duration-300 ease-in-out bg-white text-zinc-900 shadow-[0_0_60px_rgba(0,0,0,0.5)] flex flex-col h-full rounded-l-2xl md:rounded-l-3xl border-l-4 border-[#E6B950]">
+
+            <div class="px-5 py-4 md:px-8 md:py-6 bg-zinc-900 text-white flex items-center justify-between border-b-4 border-[#E6B950] shrink-0 print:hidden">
+                <div>
+                    <h1 class="text-xl md:text-3xl font-black uppercase tracking-wider text-[#E6B950]">Print List</h1>
+                    <p class="text-[10px] md:text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">Today's Stock Activity - Print Any Card Individually</p>
+                </div>
+                <button type="button" onclick="closePrintListSection()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl md:text-3xl p-2 focus:outline-none transition-colors">✕</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-zinc-50">
+                <div id="printListGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- 🏬 STOCKROOMS (AMS-0000 only): step 1 - pick a branch -->
+<div id="stockroomsBranchPickerModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Select a Branch</h3>
+            <button type="button" onclick="closeStockroomsBranchPicker()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button type="button" onclick="selectStockroomsBranch('Small Heath')" class="bg-zinc-900 hover:bg-black border-2 border-zinc-700 hover:border-[#E6B950] text-white hover:text-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Small Heath</button>
+            <button type="button" onclick="selectStockroomsBranch('Alum Rock')" class="bg-zinc-900 hover:bg-black border-2 border-zinc-700 hover:border-[#E6B950] text-white hover:text-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Alum Rock</button>
+            <button type="button" onclick="selectStockroomsBranch('Bradford')" class="bg-zinc-900 hover:bg-black border-2 border-zinc-700 hover:border-[#E6B950] text-white hover:text-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Bradford</button>
+            <button type="button" onclick="selectStockroomsBranch('Warehouse')" class="bg-zinc-900 hover:bg-black border-2 border-zinc-700 hover:border-[#E6B950] text-white hover:text-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Warehouse</button>
+            <button type="button" onclick="selectStockroomsBranch('Online')" class="bg-zinc-900 hover:bg-black border-2 border-zinc-700 hover:border-[#E6B950] text-white hover:text-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Online</button>
+        </div>
+    </div>
+</div>
+
+<!-- 🏬 STOCKROOMS (AMS-0000 only): step 2 - that branch's stockrooms, view-only -->
+<div id="stockroomsBranchPopupModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-200 max-h-[85vh] flex flex-col">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950] shrink-0">
+            <h3 id="stockroomsBranchPopupTitle" class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Stockrooms</h3>
+            <button type="button" onclick="closeStockroomsBranchPopup()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div id="stockroomsBranchPopupGrid" class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto"></div>
+    </div>
+</div>
+
+<!-- 🏬 STOCKROOMS (AMS-0000 only): step 3 - everything inside that stockroom, view-only -->
+<div id="stockroomsBranchDetailModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-200 max-h-[85vh] flex flex-col">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950] shrink-0">
+            <div class="min-w-0">
+                <button type="button" onclick="backToStockroomsBranchPopup()" class="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-[#E6B950] mb-1">← Back to Stockrooms</button>
+                <h3 id="stockroomsBranchDetailTitle" class="text-lg font-black uppercase tracking-widest text-[#E6B950] truncate">Stockroom</h3>
+            </div>
+            <button type="button" onclick="closeStockroomsBranchDetail()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none shrink-0">✕</button>
+        </div>
+        <div id="stockroomsBranchDetailBody" class="p-6 overflow-y-auto space-y-4"></div>
+    </div>
+</div>
+
+<!-- Staff Attendance admin panel (AMS-0000 only) -->
+<div id="staffAttendanceAdminModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-200 max-h-[90vh] flex flex-col">
+        <div class="bg-zinc-900 px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#E6B950] shrink-0">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Staff Attendance</h3>
+            <button type="button" onclick="closeStaffAttendanceAdminPanel()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 bg-zinc-50">
+            <div id="staffAdminBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit staff sub-modal, opened from the Staff List tab above -->
+<div id="staffEditModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Edit Staff</h3>
+            <button type="button" onclick="closeStaffEditModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="staffEditUsername">
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">Name</label>
+                <input type="text" id="staffEditName" class="w-full p-3 border border-zinc-300 rounded-lg focus:outline-none focus:border-[#E6B950]">
+            </div>
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">Email</label>
+                <input type="text" id="staffEditEmail" class="w-full p-3 border border-zinc-300 rounded-lg focus:outline-none focus:border-[#E6B950]">
+            </div>
+            <div>
+                <label class="block text-xs font-black uppercase tracking-widest text-zinc-500 mb-1">Role</label>
+                <select id="staffEditRole" class="w-full p-3 border border-zinc-300 rounded-lg focus:outline-none focus:border-[#E6B950]">
+                    <option value="staff">Staff</option>
+                    <option value="management">Management</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <button type="button" onclick="saveStaffEdit()" class="w-full py-3 rounded-xl font-black text-black text-sm uppercase tracking-wide bg-gradient-to-r from-[#C99A2E] via-[#D4AF37] to-[#E6B950] shadow-md">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Till Management Hub (management/admin only) -->
+<div id="tillManagementHubModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden border border-zinc-200 max-h-[90vh] flex flex-col">
+        <div class="bg-zinc-900 px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#E6B950] shrink-0">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Till Management</h3>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="openTillFullScreen()" class="bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all active:scale-95">Open Main Till →</button>
+                <button type="button" onclick="closeTillManagementHub()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+            </div>
+        </div>
+
+        <div class="print:hidden bg-zinc-900 px-6 py-3 flex items-center gap-2 border-b border-zinc-800 shrink-0">
+            <button type="button" onclick="switchTillHubTab('overview')" id="tillHubTabOverview" class="dashboard-metric-tab px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Overview</button>
+            <button type="button" onclick="switchTillHubTab('settings')" id="tillHubTabSettings" class="dashboard-metric-tab px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Settings</button>
+            <button type="button" onclick="switchTillHubTab('history')" id="tillHubTabHistory" class="dashboard-metric-tab px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">History</button>
+        </div>
+
+        <div class="flex-1 bg-[#F4F4F5] p-6 overflow-y-auto">
+            <!-- Overview tab -->
+            <div id="tillHubOverviewPanel" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white border border-zinc-200 rounded-xl p-4 text-center">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-400">Today</p>
+                        <p id="tillRevenueToday" class="text-3xl font-black text-emerald-700 mt-1">£0.00</p>
+                    </div>
+                    <div class="bg-white border border-zinc-200 rounded-xl p-4 text-center">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-400">This Week</p>
+                        <p id="tillRevenueWeek" class="text-3xl font-black text-emerald-700 mt-1">£0.00</p>
+                    </div>
+                    <div class="bg-white border border-zinc-200 rounded-xl p-4 text-center">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-zinc-400">This Month</p>
+                        <p id="tillRevenueMonth" class="text-3xl font-black text-emerald-700 mt-1">£0.00</p>
+                    </div>
+                </div>
+                <div id="tillActiveSessionCard" class="bg-white border border-zinc-200 rounded-xl p-4">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">Active Session</p>
+                    <p id="tillActiveSessionText" class="text-sm font-black text-zinc-800 uppercase">No active session</p>
+                </div>
+                <div id="tillOverviewBranchWrap"></div>
+            </div>
+
+            <!-- Settings tab -->
+            <div id="tillHubSettingsPanel" class="hidden space-y-6">
+                <div>
+                    <p class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Reports</p>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <button type="button" onclick="openDashboardMetricModal('sale')" class="bg-white border-2 border-zinc-200 hover:border-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Total Sale</button>
+                        <button type="button" onclick="openDashboardMetricModal('topSelling')" class="bg-white border-2 border-zinc-200 hover:border-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Top Selling</button>
+                        <button type="button" onclick="openDashboardMetricModal('mustStock')" class="bg-white border-2 border-zinc-200 hover:border-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Must Stock</button>
+                        <button type="button" onclick="openProductListModal()" class="bg-white border-2 border-zinc-200 hover:border-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">All Products</button>
+                        <button type="button" onclick="openDashboardMetricModal('outOfStock')" class="bg-white border-2 border-zinc-200 hover:border-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Out of Stock</button>
+                        <button type="button" onclick="openDashboardMetricModal('lowStock')" class="bg-white border-2 border-zinc-200 hover:border-[#E6B950] rounded-xl py-4 px-2 text-center font-black uppercase text-xs tracking-wide transition-all">Low Stock</button>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-zinc-200 rounded-xl p-4">
+                    <p class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Set Product Price</p>
+                    <div class="flex flex-wrap items-end gap-3">
+                        <div class="flex-1 min-w-[180px]">
+                            <label class="text-[10px] font-black uppercase text-zinc-500 block mb-1">Barcode</label>
+                            <input id="tillPriceBarcodeInput" type="text" placeholder="Scan or type barcode" oninput="handleTillPriceBarcodeInput(this.value)" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+                        </div>
+                        <div class="w-32">
+                            <label class="text-[10px] font-black uppercase text-zinc-500 block mb-1">Price (£)</label>
+                            <input id="tillPriceValueInput" type="number" min="0" step="0.01" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+                        </div>
+                        <button type="button" onclick="submitTillProductPrice()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Save</button>
+                    </div>
+                    <p id="tillPriceLookupStatus" class="text-[11px] font-bold text-zinc-400 mt-2"></p>
+                </div>
+
+                <div class="bg-white border border-zinc-200 rounded-xl p-4">
+                    <p class="text-xs font-black uppercase tracking-widest text-zinc-500 mb-3">Restock Shelf <span class="font-bold normal-case text-zinc-400">(move stock from stockroom → shop floor)</span></p>
+                    <div class="flex flex-wrap items-end gap-3">
+                        <div class="flex-1 min-w-[180px]">
+                            <label class="text-[10px] font-black uppercase text-zinc-500 block mb-1">Barcode</label>
+                            <input id="tillRestockBarcodeInput" type="text" placeholder="Scan or type barcode" oninput="handleTillRestockBarcodeInput(this.value)" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+                        </div>
+                        <div class="w-28">
+                            <label class="text-[10px] font-black uppercase text-zinc-500 block mb-1">Quantity</label>
+                            <input id="tillRestockQtyInput" type="number" min="1" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+                        </div>
+                        <button type="button" onclick="submitTillShelfRestock()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Restock</button>
+                    </div>
+                    <p id="tillRestockLookupStatus" class="text-[11px] font-bold text-zinc-400 mt-2"></p>
+                </div>
+            </div>
+
+            <!-- History tab -->
+            <div id="tillHubHistoryPanel" class="hidden">
+                <div class="p-8 text-center text-zinc-400 font-mono text-sm uppercase font-black">Till history is coming soon.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Set Product Price modal (clone of Set Alert Threshold) -->
+<div id="setProductPriceModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Set Price</h3>
+            <button type="button" onclick="closeSetProductPriceModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4">
+            <p id="setPriceProductName" class="text-sm font-black text-zinc-800 uppercase"></p>
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Selling Price (£)</label>
+                <input id="setPriceInput" type="number" min="0" step="0.01" placeholder="e.g. 4.99" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeSetProductPriceModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="setPriceSaveBtn" onclick="submitSetProductPrice()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Till: full-screen register -->
+<div id="tillFullScreenSection" class="hidden min-h-screen w-full bg-[#0D0A04] text-white flex flex-col font-sans antialiased overflow-x-hidden">
+    <div class="shrink-0 bg-zinc-950 border-b-2 border-[#E6B950] px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+            <button type="button" onclick="closeTillFullScreen()" class="flex shrink-0 items-center justify-center w-9 h-9 rounded-lg border border-[#E6B950] bg-black text-[#E6B950] hover:bg-zinc-900 transition-colors active:scale-90" title="Close Till">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 5l-7 7 7 7" /></svg>
+            </button>
+            <div class="min-w-0">
+                <h2 class="text-lg sm:text-xl font-black uppercase tracking-widest text-[#E6B950] truncate">Main Till — <span id="tillFullScreenBranch">—</span></h2>
+                <p id="tillFullScreenSessionBadge" class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">No active session</p>
+            </div>
+        </div>
+        <button type="button" id="tillReturnExchangeBtn" onclick="displayNotification('Returns & Exchange is coming soon.', true)" class="bg-zinc-900 hover:bg-zinc-800 border border-[#E6B950]/40 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all active:scale-95">Return / Exchange</button>
+    </div>
+
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] overflow-hidden">
+        <!-- Product search / scan -->
+        <div class="p-4 sm:p-6 overflow-y-auto border-b lg:border-b-0 lg:border-r border-zinc-800">
+            <div class="relative">
+                <input id="tillProductSearchInput" type="text" autocomplete="off" placeholder="Scan or search product..." oninput="handleTillProductSearchInput(this.value)" class="w-full bg-zinc-900 border-2 border-zinc-700 focus:border-[#E6B950] rounded-xl px-4 py-3.5 text-white placeholder-zinc-500 font-bold focus:outline-none">
+                <div id="tillProductSearchDropdown" class="hidden absolute left-0 right-0 mt-1 bg-white border border-zinc-200 rounded-lg shadow-2xl z-50 max-h-80 overflow-y-auto"></div>
+            </div>
+            <p id="tillProductSearchStatus" class="text-[11px] font-bold text-zinc-500 mt-2"></p>
+            <div id="tillRecentlyAddedGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4"></div>
+        </div>
+
+        <!-- Cart + payment -->
+        <div class="flex flex-col bg-zinc-950">
+            <div id="tillCartList" class="flex-1 overflow-y-auto p-4 space-y-2">
+                <p class="text-center text-zinc-500 text-xs font-bold uppercase py-10">Cart is empty</p>
+            </div>
+            <div class="shrink-0 border-t border-zinc-800 p-4 space-y-3">
+                <div class="flex items-center justify-between text-lg font-black">
+                    <span class="text-zinc-400 uppercase text-sm">Total</span>
+                    <span id="tillCartTotal" class="text-[#E6B950] text-2xl">£0.00</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" onclick="setTillPaymentMethod('cash')" id="tillPayCashBtn" class="dashboard-metric-tab py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Cash</button>
+                    <button type="button" onclick="setTillPaymentMethod('card')" id="tillPayCardBtn" class="dashboard-metric-tab py-2.5 rounded-lg text-xs font-black uppercase tracking-widest transition-all">Card</button>
+                </div>
+                <div id="tillCashPanel" class="hidden space-y-2">
+                    <input id="tillAmountTenderedInput" type="number" min="0" step="0.01" placeholder="Amount tendered (£)" oninput="updateTillChangeDue()" class="w-full bg-zinc-900 border border-zinc-700 focus:border-[#E6B950] rounded-lg px-3 py-2.5 text-white placeholder-zinc-500 font-bold focus:outline-none">
+                    <p id="tillChangeDueText" class="text-xs font-black uppercase text-zinc-400"></p>
+                </div>
+                <button type="button" id="tillConfirmSaleBtn" onclick="submitTillCheckout()" class="w-full bg-[#E6B950] hover:bg-[#F4D878] disabled:opacity-40 disabled:cursor-not-allowed text-zinc-950 text-sm font-black uppercase tracking-widest py-3.5 rounded-xl transition-all active:scale-95">Confirm Sale</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Product Modal -->
+<div id="addProductModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-[999999] flex items-center justify-center p-4 font-sans">
+    <div class="bg-white text-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-zinc-200">
+        <div class="bg-zinc-900 px-6 py-4 flex items-center justify-between border-b border-[#E6B950]">
+            <h3 class="text-lg font-black uppercase tracking-widest text-[#E6B950]">Add Product</h3>
+            <button type="button" onclick="closeAddProductModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl p-1 focus:outline-none">✕</button>
+        </div>
+        <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div class="flex items-center gap-4">
+                <img id="addProductPhotoPreview" class="hidden w-20 h-20 object-cover rounded-xl border border-zinc-200 shrink-0">
+                <div id="addProductPhotoPlaceholder" class="w-20 h-20 rounded-xl border-2 border-dashed border-zinc-300 flex items-center justify-center text-2xl text-zinc-300 shrink-0">📦</div>
+                <div class="flex-1 min-w-0">
+                    <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Product Photo</label>
+                    <input id="addProductPhotoInput" type="file" accept="image/*" onchange="handleAddProductPhotoChange(this)" class="w-full text-xs">
+                </div>
+            </div>
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Barcode</label>
+                <input id="addProductBarcodeInput" type="text" placeholder="e.g. 8901234567890" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Product Name</label>
+                <input id="addProductNameInput" type="text" placeholder="e.g. Goat Milk Soap" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+            <div>
+                <label class="text-xs font-black uppercase text-zinc-500 block mb-1">Initial Quantity</label>
+                <input id="addProductQtyInput" type="number" min="0" value="0" class="w-full border border-zinc-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-[#E6B950]">
+            </div>
+        </div>
+        <div class="bg-zinc-50 px-6 py-4 border-t border-zinc-200 flex justify-end gap-2">
+            <button type="button" onclick="closeAddProductModal()" class="bg-zinc-200 hover:bg-zinc-300 text-zinc-800 text-xs font-black uppercase tracking-widest py-2.5 px-5 rounded-xl transition-all">Cancel</button>
+            <button type="button" id="addProductSubmitBtn" onclick="submitAddProduct()" class="bg-zinc-900 hover:bg-zinc-800 text-[#E6B950] text-xs font-black uppercase tracking-widest py-2.5 px-6 rounded-xl transition-all">Create</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- Stock Operations popup modal -->
+<div id="stockOperationSlidingModal" class="hidden fixed inset-0 z-[99999] overflow-hidden font-sans" role="dialog" aria-modal="true">
+    <div class="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity duration-300" onclick="closeStockOperationModal()"></div>
+
+    <div class="fixed inset-y-0 right-0 flex max-w-full pl-6 sm:pl-10">
+        <div class="w-screen max-w-md sm:max-w-2xl md:max-w-4xl transform translate-x-full transition-transform duration-300 ease-in-out bg-white text-zinc-900 shadow-[0_0_60px_rgba(0,0,0,0.5)] flex flex-col h-full rounded-l-2xl md:rounded-l-3xl border-l-4 border-[#E6B950]">
+            
+            <div class="px-5 py-4 md:px-8 md:py-6 bg-zinc-900 text-white flex items-center justify-between rounded-tl-xl md:rounded-tl-2xl border-b-4 border-[#E6B950] shrink-0">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 md:w-12 md:h-12 bg-[#E6B950]/10 border border-[#E6B950]/30 text-[#E6B950] rounded-xl flex items-center justify-center text-sm md:text-2xl font-bold shadow-inner">📦</span>
+                    <div>
+                        <h2 id="slideModalTitle" class="text-base sm:text-xl md:text-3xl font-black uppercase tracking-wide text-[#E6B950]">Stock Operation Pipeline</h2>
+                        <p id="slideModalSub" class="text-[10px] sm:text-xs md:text-base font-bold text-zinc-400 uppercase mt-0.5 tracking-wider">Please fill out product data logs and scanner codes accurately</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeStockOperationModal()" class="text-zinc-400 hover:text-[#E6B950] font-black text-xl sm:text-2xl md:text-4xl p-2 focus:outline-none transition-colors">✕</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 space-y-6 md:space-y-8 bg-white">
+                <form id="slideStockForm" class="space-y-5 md:space-y-6" onsubmit="event.preventDefault();">
+
+                    <!-- IN / OUT: Single Branch + Barcode row -->
+                    <div id="singleBranchRow" class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                        <div>
+                            <label class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">Branch Location</label>
+                            <input type="text" id="slideLocationSelect" readonly
+                                class="w-full bg-zinc-200 border-2 border-zinc-300 text-zinc-700 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-black cursor-not-allowed shadow-inner" />
+                        </div>
+                        <div>
+                            <label class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">Product Barcode Scanner *</label>
+                            <input type="text" id="slideBarcode" placeholder="Scan or Type Barcode" oninput="handleSlideBarcodeAutoSearch(this.value)" class="w-full bg-zinc-50 border-2 border-zinc-400 text-zinc-900 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-mono font-black focus:outline-none focus:border-[#E6B950] transition-all shadow-inner" />
+                        </div>
+                    </div>
+
+                    <!-- MOVE: From + To Branch + Barcode -->
+                    <div id="moveBranchRow" class="hidden space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                            <div>
+                                <label class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">From Branch *</label>
+                                <select id="slideMoveFrom" class="w-full bg-zinc-50 border-2 border-zinc-400 text-zinc-900 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-black focus:outline-none focus:border-[#E6B950] transition-all shadow-inner">
+                                    <option value="" disabled selected>Select Source Branch</option>
+                                    <option value="Small Heath">Small Heath</option>
+                                    <option value="Alum Rock">Alum Rock</option>
+                                    <option value="Bradford">Bradford</option>
+                                    <option value="Warehouse">Warehouse</option>
+                                    <option value="Online">Online</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">To Branch *</label>
+                                <select id="slideMoveTo" onchange="populateSlideStoreroomOptions()" class="w-full bg-zinc-50 border-2 border-zinc-400 text-zinc-900 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-black focus:outline-none focus:border-[#E6B950] transition-all shadow-inner">
+                                    <option value="" disabled selected>Select Destination Branch</option>
+                                    <option value="Small Heath">Small Heath</option>
+                                    <option value="Alum Rock">Alum Rock</option>
+                                    <option value="Bradford">Bradford</option>
+                                    <option value="Warehouse">Warehouse</option>
+                                    <option value="Online">Online</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">Product Barcode Scanner *</label>
+                            <input type="text" id="slideBarcodeMove" placeholder="Scan barcode — name & qty auto-fill" oninput="handleSlideBarcodeAutoSearch(this.value)" class="w-full bg-zinc-50 border-2 border-zinc-400 text-zinc-900 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-mono font-black focus:outline-none focus:border-[#E6B950] transition-all shadow-inner" />
+                        </div>
+                    </div>
+
+                    <!-- Existing Product Info: shown for IN / OUT / MOVE whenever the scanned barcode already exists -->
+                    <div id="availableQtyRow" class="hidden bg-emerald-50 border-2 border-emerald-300 rounded-xl p-3 md:p-4 space-y-2">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-black uppercase tracking-widest text-emerald-700">Available Stock:</span>
+                            <span id="slideAvailableQty" class="text-2xl font-black font-mono text-emerald-600">0</span>
+                            <span class="text-xs font-bold text-emerald-500 uppercase">Pcs in System</span>
+                        </div>
+                        <div id="slideExistingLocationRow" class="hidden flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-black uppercase tracking-widest text-emerald-700">Current Location:</span>
+                            <span id="slideExistingLocationText" class="text-xs sm:text-sm font-black font-mono text-emerald-700 bg-emerald-100 px-2 py-1 rounded"></span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+                        <div class="md:col-span-2">
+                            <label class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">Product Name *</label>
+                            <input type="text" id="slideProductName" required placeholder="e.g., Premium Ajwa Dates Box" class="w-full bg-zinc-50 border-2 border-zinc-400 text-zinc-900 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-black focus:outline-none focus:border-[#E6B950] transition-all shadow-inner" />
+                        </div>
+                        <div>
+                            <label id="slideQtyLabel" class="text-xs sm:text-sm md:text-base font-black uppercase tracking-wider text-zinc-800 block mb-1.5 md:mb-3">Quantity (Pcs) *</label>
+                            <input type="number" id="slideProductQty" value="1" min="1" required class="w-full bg-zinc-50 border-2 border-zinc-400 text-zinc-900 rounded-xl md:rounded-2xl px-3 py-2.5 md:px-5 md:py-4 text-xs sm:text-sm md:text-lg font-black text-center focus:outline-none focus:border-[#E6B950] transition-all shadow-inner" />
+                        </div>
+                    </div>
+
+                    <div id="storageLocationBox" class="bg-zinc-100 border border-zinc-300 p-3 sm:p-5 md:p-6 rounded-xl md:rounded-2xl">
+                        <p class="text-[11px] font-black uppercase tracking-widest text-zinc-500 mb-3">Storage Location</p>
+                        <p class="text-[10px] font-bold text-zinc-500 mb-3">Only Stockroom is required. Shelf / Row / Column are optional — pick an existing one, or type a new name and it's created automatically.</p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                            <div>
+                                <label class="text-[11px] sm:text-xs font-black uppercase tracking-wider text-zinc-700 block mb-1 md:mb-2">Stockroom</label>
+                                <select id="slideStoreroom" required onchange="loadStockInShelfOptions()" class="w-full bg-white border border-zinc-400 rounded-lg md:rounded-xl px-2 py-1.5 md:px-3 md:py-3 text-xs sm:text-sm font-black text-zinc-900 focus:outline-none focus:border-[#E6B950]">
+                                    <option value="" disabled selected>Select Stockroom</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] sm:text-xs font-black uppercase tracking-wider text-zinc-700 block mb-1 md:mb-2">Shelf <span class="text-zinc-400 normal-case font-bold">(optional)</span></label>
+                                <input type="text" id="slideShelf" list="slideShelfOptions" oninput="handleSlideShelfInput()" placeholder="e.g. A" class="w-full bg-white border border-zinc-400 rounded-lg md:rounded-xl px-2 py-1.5 md:px-3 md:py-3 text-xs sm:text-sm font-black text-zinc-900 focus:outline-none focus:border-[#E6B950]">
+                                <datalist id="slideShelfOptions"></datalist>
+                            </div>
+                            <div>
+                                <label class="text-[11px] sm:text-xs font-black uppercase tracking-wider text-zinc-700 block mb-1 md:mb-2">Row <span class="text-zinc-400 normal-case font-bold">(optional)</span></label>
+                                <input type="text" id="slideRow" list="slideRowOptions" placeholder="e.g. 1" class="w-full bg-white border border-zinc-400 rounded-lg md:rounded-xl px-2 py-1.5 md:px-3 md:py-3 text-xs sm:text-sm font-black text-zinc-900 focus:outline-none focus:border-[#E6B950]">
+                                <datalist id="slideRowOptions"></datalist>
+                            </div>
+                            <div>
+                                <label class="text-[11px] sm:text-xs font-black uppercase tracking-wider text-zinc-700 block mb-1 md:mb-2">Column <span class="text-zinc-400 normal-case font-bold">(optional)</span></label>
+                                <input type="text" id="slideColumn" list="slideColumnOptions" placeholder="e.g. 1" class="w-full bg-white border border-zinc-400 rounded-lg md:rounded-xl px-2 py-1.5 md:px-3 md:py-3 text-xs sm:text-sm font-black text-zinc-900 focus:outline-none focus:border-[#E6B950]">
+                                <datalist id="slideColumnOptions"></datalist>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                        <button type="button" onclick="addSlideProductEntryToChecklist()" class="w-full sm:w-auto bg-[#E6B950] hover:bg-[#F4D878] text-zinc-950 text-xs sm:text-sm font-black uppercase tracking-widest py-3 px-6 rounded-xl border-2 border-[#B8862E] transition-all flex items-center justify-center gap-2 active:scale-95">
+                            <span>Add Item to Checklist</span> ➕
+                        </button>
+                    </div>
+                </form>
+
+                <div class="border-t-2 border-zinc-200 pt-6 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs sm:text-sm md:text-xl font-black uppercase tracking-wider text-zinc-900 flex items-center gap-2">
+                            <span>Staged Checklist Batch Pool</span>
+                            <span id="slideChecklistCountBadge" class="bg-red-600 text-white font-mono text-xs px-2 py-0.5 rounded-full font-black">0 Items</span>
+                        </h4>
+                    </div>
+                    <div class="border border-zinc-200 rounded-xl overflow-hidden shadow-inner max-h-[260px] overflow-y-auto bg-zinc-50">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-zinc-900 text-white font-mono text-[10px] sm:text-xs md:text-sm uppercase tracking-wider select-none sticky top-0 z-10">
+                                    <th class="p-2 md:p-4">Barcode</th>
+                                    <th class="p-2 md:p-4">Product Profiles</th>
+                                    <th class="p-2 md:p-4 text-center">Qty</th>
+                                    <th class="p-2 md:p-4 text-center">Location Map</th>
+                                    <th class="p-2 md:p-4 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="slideChecklistBatchTableBody" class="divide-y divide-zinc-200 text-xs sm:text-sm text-zinc-800 font-medium bg-white">
+                                <tr>
+                                    <td colspan="5" class="p-6 text-center text-zinc-400 font-mono font-bold uppercase tracking-wide bg-white">
+                                        No data packages staged in current batch sequence.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="slideModalFooterContainer" class="border-t-2 border-zinc-200 p-4 bg-zinc-50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+                </div>
+        </div>
+    </div>
+</div>
+
+  <script>
+        const apiUrl = (window.location.protocol === "file:" || (window.location.port && window.location.port !== "8000"))
+            ? "http://127.0.0.1:8000"
+            : window.location.origin;
+        let sessionToken = "";
+
+        function toggleAuthMode(showRegister) {
+            const loginBox = document.getElementById("loginFormContainer");
+            const registerBox = document.getElementById("registerFormContainer");
+            
+            const authMessageElement = document.getElementById("authMessage");
+            if (authMessageElement) authMessageElement.classList.add("hidden");
+            
+            if (typeof terminateWebcam === "function") terminateWebcam();
+
+            if (showRegister) {
+                loginBox.classList.add("hidden");
+                registerBox.classList.remove("hidden");
+            } else {
+                registerBox.classList.add("hidden");
+                loginBox.classList.remove("hidden");
+            }
+        }
+
+       let toastTimeoutTrackerId = null;
+
+        function displayNotification(textMessage, isSuccess = false) {
+            const toastElement = document.getElementById("authMessage");
+            const textContainer = document.getElementById("authMessageText");
+            const iconSlot = document.getElementById("toastIconSlot");
+            const titleSlot = document.getElementById("toastTitleSlot");
+            
+            if (!toastElement || !textContainer || !iconSlot || !titleSlot) return;
+
+            // Clear any active running auto-hide timers
+            if(toastTimeoutTrackerId) clearTimeout(toastTimeoutTrackerId);
+
+            textContainer.innerText = textMessage;
+
+            // Morph toast configurations based on security signal state map
+            if (isSuccess) {
+                toastElement.className = "fixed bottom-5 right-5 z-[9999] flex items-center gap-3 bg-[#001019]/95 backdrop-blur-md border-emerald-500 p-4 rounded-xl shadow-[0_10px_40px_rgba(16,185,129,0.2)] max-w-sm w-full font-mono transition-all duration-300 transform translate-y-0 opacity-100";
+                iconSlot.className = "w-10 h-10 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center text-lg shrink-0 text-emerald-400";
+                iconSlot.innerText = "✅";
+                titleSlot.innerText = "Clearance Success";
+                titleSlot.className = "text-[10px] font-bold uppercase tracking-wider text-emerald-400";
+            } else {
+                toastElement.className = "fixed bottom-5 right-5 z-[9999] flex items-center gap-3 bg-[#001019]/95 backdrop-blur-md border-red-500 p-4 rounded-xl shadow-[0_10px_40px_rgba(239,68,68,0.2)] max-w-sm w-full font-mono transition-all duration-300 transform translate-y-0 opacity-100";
+                iconSlot.className = "w-10 h-10 bg-red-500/10 border border-red-500/30 rounded-full flex items-center justify-center text-lg shrink-0 text-red-400";
+                iconSlot.innerText = "⚠️";
+                titleSlot.innerText = "Access Warning";
+                titleSlot.className = "text-[10px] font-bold uppercase tracking-wider text-red-400";
+            }
+
+            toastElement.classList.remove("hidden");
+
+            // ⏱️ AUTOMATIC AUTO-HIDE PIPELINE (Runs smoothly for 3.5 Seconds)
+            toastTimeoutTrackerId = setTimeout(() => {
+                closeToastNotificationExplicitly();
+            }, 3500);
+        }
+
+        function closeToastNotificationExplicitly() {
+            const toastElement = document.getElementById("authMessage");
+            if(!toastElement) return;
+            
+            // Smoothly animate sliding down out of the viewport view layout
+            toastElement.classList.add("translate-y-10", "opacity-0");
+            setTimeout(() => {
+                toastElement.classList.add("hidden");
+            }, 300);
+        }
+
+        // Each branch entry: { branch: <string stored as the working branch, matches the
+        // Stock In/Out/Move dropdown option values exactly>, title: <bare header text,
+        // no "Amsons" prefix - matches the Alum Rock pattern>, img: <header thumbnail> }
+        const BRANCH_TERMINAL_CONFIG = {
+            'Amsons AlumRock':     { branch: 'Alum Rock',   title: 'ALUM ROCK',      img: 'amsonsAlumrock.webp' },
+            'Amsons SmallHeath': { branch: 'Small Heath', title: 'SMALL HEATH',  img: 'amsonsSmallHeath.jpg' },
+            'Amsons Bradford':     { branch: 'Bradford',    title: 'BRADFORD',       img: 'amsonsBradford.webp' },
+            'Amsons Warehouse':    { branch: 'Warehouse',   title: 'WAREHOUSE',      img: 'amsonsWarehouse.jpeg' },
+            'Amsons Online':       { branch: 'Online',      title: 'ONLINE',         img: 'amsonsOnline.png' },
+        };
+
+        function selectTerminalLocation(locationName) {
+            let cleanLocationName = locationName ? locationName.trim() : "";
+            localStorage.setItem("selected_location_raw", cleanLocationName);
+
+            const config = BRANCH_TERMINAL_CONFIG[cleanLocationName];
+            localStorage.setItem("selected_branch", config ? config.branch : cleanLocationName);
+
+            const locationTitleElement = document.getElementById('dashboardLocationTitle');
+            const locationImgElement = document.getElementById('dashboardLocationImg');
+            const isSpecialNoStoreroomAccount = (localStorage.getItem('username') || '').toUpperCase() === 'AMS-0000';
+
+            if (locationTitleElement && locationImgElement) {
+                if (isSpecialNoStoreroomAccount) {
+                    // AMS-0000 has no single branch - it oversees everything, so no branch name
+                    // is shown here at all, just the system name (bigger than the usual title).
+                    locationTitleElement.innerText = 'INVENTORY MANAGEMENT SYSTEM';
+                    locationTitleElement.classList.add('text-xl', 'sm:text-2xl', 'lg:text-4xl');
+                    locationTitleElement.classList.remove('text-base', 'sm:text-lg', 'lg:text-2xl');
+                    locationImgElement.classList.add('hidden');
+                } else if (config) {
+                    locationTitleElement.innerText = config.title;
+                    locationTitleElement.classList.remove('text-xl', 'sm:text-2xl', 'lg:text-4xl');
+                    locationTitleElement.classList.add('text-base', 'sm:text-lg', 'lg:text-2xl');
+                    locationImgElement.src = config.img;
+                    locationImgElement.classList.remove('hidden');
+                } else {
+                    locationTitleElement.innerText = cleanLocationName.toUpperCase();
+                    locationImgElement.classList.add('hidden');
+                }
+            }
+
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('locationSection').classList.add('hidden');
+            document.getElementById('dashboardSection').classList.remove('hidden');
+
+            // Everything below reads the branch just set above via getCurrentBranch(), so it
+            // has to run AFTER that localStorage write - this is what makes switching branches
+            // without a full page reload actually refresh to the new branch's own data instead
+            // of showing whatever branch was loaded last.
+            if (typeof renderStockHistoryCardsGrid === "function") renderStockHistoryCardsGrid();
+            if (typeof renderStoreroomCards === "function") renderStoreroomCards();
+            if (typeof renderStoreSectionCards === "function") renderStoreSectionCards();
+            if (typeof fetchInventoryData === "function") fetchInventoryData();
+            if (typeof fetchDashboardStats === "function") {
+                fetchDashboardStats().then(() => {
+                    // Only pop the notification dropdown open right here, on entry - not on
+                    // every later stats refresh (e.g. after the manager's own dispatch).
+                    if (typeof popupApprovalNotificationIfPending === "function") popupApprovalNotificationIfPending();
+                });
+            }
+
+            if (typeof resetInactivityLogoutTimer === "function") resetInactivityLogoutTimer();
+            // Right after login/branch-select only: sidebar pops open briefly (5s) then
+            // auto-closes itself. Any other time it's opened (the toggle button), it stays
+            // open until the user closes it themselves - see openMainSidebarBrieflyOnEntry.
+            if (typeof openMainSidebarBrieflyOnEntry === "function") openMainSidebarBrieflyOnEntry();
+
+            // AI Cam only starts once the dashboard itself is actually showing (i.e. after a
+            // branch is picked here) - not right after login, since the branch-selection screen
+            // has no use for it yet.
+            if (typeof startAiCamWidget === "function") startAiCamWidget();
+        }
+
+        
+const scanAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playScannerBeep() {
+    try {
+        const osc = scanAudioCtx.createOscillator();
+        const gain = scanAudioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(scanAudioCtx.destination);
+        
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(900, scanAudioCtx.currentTime); // বিপ সাউন্ডের টিউন (Pitch)
+        gain.gain.setValueAtTime(1, scanAudioCtx.currentTime);
+        
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, scanAudioCtx.currentTime + 0.15);
+        osc.stop(scanAudioCtx.currentTime + 0.15);
+    } catch (e) {
+        console.log("Audio contexts need user gesture to enable audio.");
+    }
+}
+
+
+    </script>
+    <script src="login.js"></script>
+    <script src="register.js"></script>
+    <script src="dashboard.js"></script>
+    <script>
+    (function () {
+        var cluster = document.getElementById('headerActionsCluster');
+        var headerAnchor = document.getElementById('headerClusterAnchor');
+        var sidebarAnchor = document.getElementById('sidebarClusterAnchor');
+        if (!cluster || !headerAnchor || !sidebarAnchor) return;
+        var desktopQuery = window.matchMedia('(min-width: 1024px)');
+        function placeActionsCluster() {
+            var target = desktopQuery.matches ? headerAnchor : sidebarAnchor;
+            if (cluster.parentElement !== target) target.appendChild(cluster);
+        }
+        placeActionsCluster();
+        desktopQuery.addEventListener('change', placeActionsCluster);
+    })();
+    </script>
+
+<script>
+window.addEventListener('load', function() {
+    localStorage.setItem('access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJBTVMtMDAwMiIsInJvbGUiOiJtYW5hZ2VtZW50IiwiZXhwIjoxNzgzODQ1NjEzfQ.EAxNJyJUOjXyWg-T2OXQKKUy3PlVLFAPvWgVSAyzmTM');
+    localStorage.setItem('user_role', 'management');
+    localStorage.setItem('username', 'AMS-0002');
+    setTimeout(function() {
+        if (typeof selectTerminalLocation === 'function') selectTerminalLocation('Amsons AlumRock');
+        setTimeout(function() {
+            if (typeof openStoreManagementSection === 'function') openStoreManagementSection();
+            setTimeout(function() {
+                var el = document.getElementById('tillFullScreenSection');
+                var rect = el.getBoundingClientRect();
+                var cs = getComputedStyle(el);
+                var chain = [];
+                var node = el.parentElement;
+                while (node) {
+                    chain.push(node.tagName + (node.id ? '#'+node.id : '') + ':' + getComputedStyle(node).display + (getComputedStyle(node).display==='none' ? ' HIDDEN' : ''));
+                    node = node.parentElement;
+                }
+                document.title = 'DEBUG:' + chain.join(' | ');
+            }, 500);
+        }, 2500);
+    }, 400);
+});
+</script>
+</body>
+
+</html>

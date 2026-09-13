@@ -1,24 +1,49 @@
-// ==============================================================================================
-// 🧠 AMSONSTOCK SECURE LOGISTIC GATEWAY BIOMETRIC PIPELINE LAYER (login.js)
-// ==============================================================================================
-
-function speakWelcomeMessage(accountUserName) {
-    const sanitizedName = accountUserName || "Staff Member";
-    const welcomeText = `Welcome ${sanitizedName}, to Amsons Inventory System`;
-    
-    const message = new SpeechSynthesisUtterance(welcomeText);
-    message.lang = 'en-GB';
-    message.pitch = 1.0;
-    message.rate = 0.95; 
-    window.speechSynthesis.speak(message);
-}
+// login.js - handles login (manual PIN + Face ID)
 
 let loginWebcamInstance = null;
-let scanningCycleIntervalId = null;
-let currentFailedAttemptsCount = 0;
+let scanningCycleTimeoutId = null;
+let loginFaceScanBusy = false;
 
-const MAX_AUTOMATIC_SCANS_LIMIT = 5; 
-const SCAN_INTERVAL_DELAY_MS = 2500; 
+// Poll one frame at a time for Face ID, same as the Till's Face ID
+const FACE_SCAN_POLL_INTERVAL_MS = 800;
+
+// AMS-0000 and AMS-Adm skip branch selection and go straight to the dashboard
+const DIRECT_DASHBOARD_USERNAMES = ["AMS-0000", "AMS-ADM"];
+function routeAfterLoginSuccess(username) {
+    document.getElementById('authSection').classList.add('hidden');
+    if (DIRECT_DASHBOARD_USERNAMES.includes((username || "").toUpperCase()) && typeof selectTerminalLocation === "function") {
+        selectTerminalLocation('Amsons AlumRock');
+    } else {
+        document.getElementById('locationSection').classList.remove('hidden');
+        if (document.getElementById('dashboardSection')) {
+            document.getElementById('dashboardSection').classList.add('hidden');
+        }
+    }
+}
+
+
+async function loadAuthenticatedUserProfile(username) {
+    try {
+        const response = await fetch(`${apiUrl}/api/user-profile?username=${encodeURIComponent(username)}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${sessionToken || localStorage.getItem("access_token")}`
+            }
+        });
+        
+        if (response.ok) {
+            const userData = await response.json();
+            
+
+            localStorage.setItem("user_role", userData.role); // sets 'staff' or 'management'
+            localStorage.setItem("user_name", userData.name || "Staff Member");
+            
+            console.log("🔒 User Role Cached Successfully:", userData.role);
+        }
+    } catch (err) {
+        console.error("Profile Configuration Mapping Sync Failed:", err);
+    }
+}
 
 async function bootAutoFaceAuthentication() {
     const videoElement = document.getElementById("loginWebcamStream");
@@ -31,22 +56,19 @@ async function bootAutoFaceAuthentication() {
     if(canvasElement) canvasElement.classList.add("hidden");
     if(faceOverlay) faceOverlay.classList.add("hidden");
     videoElement.classList.remove("hidden");
-    
-    currentFailedAttemptsCount = 0;
-    statusLabel.innerText = "👤 Scanning Face ID Automatically...";
+
+    statusLabel.innerText = "👤 Scanning Face ID...";
     statusLabel.className = "text-sm text-amber-400 animate-pulse font-bold";
 
     try {
-        loginWebcamInstance = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user", width: 640, height: 480 }, 
-            audio: false 
+        loginWebcamInstance = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
         });
         videoElement.srcObject = loginWebcamInstance;
-        
-        if (scanningCycleIntervalId) clearInterval(scanningCycleIntervalId);
-        scanningCycleIntervalId = setInterval(() => {
-            executeBackgroundBiometricCapture();
-        }, SCAN_INTERVAL_DELAY_MS);
+
+        if (scanningCycleTimeoutId) clearTimeout(scanningCycleTimeoutId);
+        runFaceScanPollLoop();
 
     } catch (err) {
         console.warn("Camera blocked or missing channels:", err);
@@ -58,32 +80,29 @@ function executeManualCameraTrigger() {
     bootAutoFaceAuthentication();
 }
 
-async function executeBackgroundBiometricCapture() {
+function runFaceScanPollLoop() {
+    if (!loginWebcamInstance) return;
+    captureAndMatchFaceFrame();
+    scanningCycleTimeoutId = setTimeout(runFaceScanPollLoop, FACE_SCAN_POLL_INTERVAL_MS);
+}
+
+async function captureAndMatchFaceFrame() {
+    if (loginFaceScanBusy || !loginWebcamInstance) return;
+    loginFaceScanBusy = true;
+
     const videoElement = document.getElementById("loginWebcamStream");
     const canvasElement = document.getElementById("loginPhotoCanvas");
     const statusLabel = document.getElementById("scannerStatusText");
-
-    if (!loginWebcamInstance || currentFailedAttemptsCount >= MAX_AUTOMATIC_SCANS_LIMIT) {
-        if(currentFailedAttemptsCount >= MAX_AUTOMATIC_SCANS_LIMIT) {
-            statusLabel.innerText = "Face Scan limit reached. Use Employee ID.";
-            shutdownFaceCamera();
-        }
-        return;
-    }
-
-    currentFailedAttemptsCount++;
-    statusLabel.innerText = `👁️ Analyzing Face Matrix (${currentFailedAttemptsCount}/${MAX_AUTOMATIC_SCANS_LIMIT})...`;
 
     const trackingContext = canvasElement.getContext("2d");
     canvasElement.width = videoElement.videoWidth || 640;
     canvasElement.height = videoElement.videoHeight || 480;
     trackingContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-    
-    const base64SnapshotPayload = canvasElement.toDataURL("image/jpeg", 0.85);
+    const frame = canvasElement.toDataURL("image/jpeg", 0.8);
 
     try {
         const biometricPayload = new FormData();
-        biometricPayload.append("facePhoto", base64SnapshotPayload);
+        biometricPayload.append("frame", frame);
 
         const apiResponse = await fetch(`${apiUrl}/api/login-face`, {
             method: "POST",
@@ -91,21 +110,28 @@ async function executeBackgroundBiometricCapture() {
         });
 
         const resultData = await apiResponse.json();
-        
+        loginFaceScanBusy = false;
+
         if (apiResponse.ok && resultData.status === "success") {
-            clearInterval(scanningCycleIntervalId);
+            clearTimeout(scanningCycleTimeoutId);
             shutdownFaceCamera();
-            
+
             sessionToken = resultData.access_token;
             localStorage.setItem("access_token", sessionToken);
-            
+
             displayNotification(resultData.message || "Face Verification Passed!", true);
-            
-           
-            const decodedId = "admin"; 
-            loadAuthenticatedUserProfile(decodedId);
+
+            const decodedId = resultData.username || "admin";
+            await loadAuthenticatedUserProfile(decodedId);
+
+            routeAfterLoginSuccess(decodedId);
+        } else if (statusLabel) {
+            statusLabel.innerText = resultData.detail === "no_face"
+                ? "Position your face in the frame..."
+                : "Not recognized, keep looking...";
         }
     } catch (err) {
+        loginFaceScanBusy = false;
         console.error("Face Match Routing Error:", err);
     }
 }
@@ -115,9 +141,9 @@ function shutdownFaceCamera() {
         loginWebcamInstance.getTracks().forEach(track => track.stop());
         loginWebcamInstance = null;
     }
-    if (scanningCycleIntervalId) {
-        clearInterval(scanningCycleIntervalId);
-        scanningCycleIntervalId = null;
+    if (scanningCycleTimeoutId) {
+        clearTimeout(scanningCycleTimeoutId);
+        scanningCycleTimeoutId = null;
     }
 }
 
@@ -152,12 +178,19 @@ function showFaceScan() {
         document.getElementById("scannerStatusText").innerText = "Position your face within the frame";
     }
 }
-// ─── 📝 MANUAL CREDENTIALS FORM LOGIN HANDLER ───
+
+// ─── MANUAL LOGIN FORM HANDLER ───
 document.getElementById("loginForm")?.addEventListener("submit", async function(e) {
     e.preventDefault();
     
     const uName = document.getElementById("loginUsername").value.trim();
     const pWord = document.getElementById("loginPassword").value.trim();
+
+    const pinRegex = /^\d{4}$/;
+    if (!pinRegex.test(pWord)) {
+        displayNotification("Invalid PIN format! PIN must be exactly 4 digits long and contain only numbers.", false);
+        return;
+    }
 
     try {
         const formData = new FormData();
@@ -177,8 +210,9 @@ document.getElementById("loginForm")?.addEventListener("submit", async function(
             
             displayNotification("Authentication Successful! Loading Hub...", true);
             
-           
-            loadAuthenticatedUserProfile(uName);
+            await loadAuthenticatedUserProfile(uName);
+
+            routeAfterLoginSuccess(uName);
         } else {
             displayNotification(data.detail || "Invalid login credentials match trace.", false);
         }

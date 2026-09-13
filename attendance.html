@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amsons — Staff Attendance</title>
+    <link rel="icon" href="data:;base64,=">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Roboto', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<!-- Public Staff Attendance kiosk, meant to stay open on a shared device. -->
+
+<body class="text-gray-100 font-roboto min-h-screen bg-[radial-gradient(circle_at_top,#161A20_0%,#0F1115_65%,#070809_100%)]">
+
+    <div id="staffAttendanceKioskSection" class="min-h-screen w-full flex flex-col items-center justify-center font-roboto p-6 relative overflow-hidden">
+
+        <div class="w-full max-w-screen-xl mx-auto">
+            <div class="w-full max-w-4xl mx-auto border border-[#E6B950]/30 rounded-[32px] p-6 sm:p-10 lg:p-14 backdrop-blur-sm bg-black/40 shadow-[0_0_40px_rgba(230,185,80,0.15)] text-center">
+
+                <img src="AMSONS.png" alt="Amsons logo" class="w-40 sm:w-52 md:w-56 h-auto mx-auto mb-2">
+                <h2 class="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-wide mb-1">Staff Attendance</h2>
+                <p id="attendanceScannerStatusText" class="text-gray-300 text-sm sm:text-base md:text-lg mb-6">Position your face within the frame</p>
+
+                <!-- Idle/scanning state -->
+                <div id="attendanceScanView">
+                    <div class="relative aspect-square w-[220px] sm:w-[280px] md:w-[320px] mx-auto flex items-center justify-center mb-6">
+                        <div class="absolute top-0 left-0 w-7 h-7 border-t-2 border-l-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute top-0 right-0 w-7 h-7 border-t-2 border-r-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute bottom-0 left-0 w-7 h-7 border-b-2 border-l-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute bottom-0 right-0 w-7 h-7 border-b-2 border-r-2 border-[#E6B950] z-20"></div>
+                        <div class="absolute inset-4 rounded-full overflow-hidden border-2 border-[#E6B950] shadow-[0_0_22px_rgba(230,185,80,0.45)]">
+                            <img id="attendanceFaceOverlay" src="amFace.png" onclick="bootAttendanceFaceScan()" class="absolute inset-0 w-full h-full object-contain rounded-full cursor-pointer z-30" style="filter: drop-shadow(0 0 8px rgba(230,185,80,0.5));">
+                            <video id="attendanceWebcamStream" autoplay playsinline class="w-full h-full object-cover hidden"></video>
+                            <canvas id="attendancePhotoCanvas" class="w-full h-full object-cover hidden"></canvas>
+                        </div>
+                    </div>
+                    <button type="button" onclick="bootAttendanceFaceScan()" class="tap-btn-animate w-full max-w-sm mx-auto px-6 py-3 border border-[#E6B950] bg-[#E6B950]/10 rounded-xl text-[#E6B950] text-sm sm:text-base md:text-lg font-bold tracking-wide uppercase shadow-[0_0_15px_rgba(230,185,80,0.2)] hover:bg-[#E6B950]/20 transition-all duration-300">
+                        Tap the face to begin
+                    </button>
+                    <button type="button" onclick="showAttendanceManualEntry()" class="block mx-auto mt-4 text-[#E6B950] underline underline-offset-8 text-sm sm:text-base hover:text-[#F4D878]">
+                        Sign in with Employee ID
+                    </button>
+                </div>
+
+                <!-- Manual fallback: Employee ID + PIN -->
+                <div id="attendanceManualEntryView" class="hidden max-w-sm mx-auto">
+                    <form id="attendanceManualEntryForm" class="space-y-4 text-left">
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-[#E6B950]">Employee ID</label>
+                            <input type="text" id="attendanceManualUsername" required placeholder="Enter your Employee ID" class="w-full p-4 bg-black/40 border border-[#E6B950]/60 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-[#E6B950]" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold mb-2 text-[#E6B950]">4 Digit PIN</label>
+                            <input type="password" id="attendanceManualPassword" required placeholder="Enter your 4 Digit PIN" class="w-full p-4 bg-black/40 border border-[#E6B950]/60 rounded-xl text-white placeholder:text-gray-500 focus:outline-none focus:border-[#E6B950]" />
+                        </div>
+                        <button type="submit" class="w-full py-3 rounded-xl font-black text-black text-lg bg-gradient-to-r from-[#C99A2E] via-[#D4AF37] to-[#E6B950] shadow-[0_0_25px_rgba(230,185,80,0.35)]">
+                            Continue
+                        </button>
+                    </form>
+                    <button type="button" onclick="resetAttendanceKioskToScan()" class="block mx-auto mt-4 text-[#E6B950] underline underline-offset-8 text-sm sm:text-base hover:text-[#F4D878]">
+                        Back to Face Scan
+                    </button>
+                </div>
+
+                <!-- Identified staff: Clock In / Clock Out -->
+                <div id="attendanceResultView" class="hidden">
+                    <img id="attendanceResultPhoto" src="" class="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover mx-auto border-4 border-[#E6B950] shadow-lg mb-4">
+                    <h3 id="attendanceResultName" class="text-xl sm:text-2xl font-black text-white uppercase mb-1">—</h3>
+                    <p id="attendanceResultStatusText" class="text-gray-300 text-sm sm:text-base mb-6">—</p>
+                    <div class="flex gap-4 max-w-md mx-auto">
+                        <button type="button" id="attendanceClockInBtn" onclick="submitAttendanceClock('in')" class="flex-1 py-3.5 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-gradient-to-r from-emerald-500 to-emerald-700 text-white shadow-md hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100">
+                            Clock In
+                        </button>
+                        <button type="button" id="attendanceClockOutBtn" onclick="submitAttendanceClock('out')" class="flex-1 py-3.5 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-gradient-to-r from-red-500 to-red-700 text-white shadow-md hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100">
+                            Clock Out
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="attendanceToast" class="hidden fixed top-5 left-1/2 z-[9999999] bg-black/90 backdrop-blur-md text-white text-sm font-bold rounded-2xl shadow-[0_12px_40px_rgba(230,185,80,0.25)] border border-[#E6B950]/40 max-w-sm w-[92%] sm:w-auto opacity-0" style="transform: translate(-50%, -16px);">
+        <div class="h-[3px] w-full rounded-t-2xl bg-gradient-to-r from-[#C99A2E] via-[#E6B950] to-[#C99A2E]"></div>
+        <div id="attendanceToastText" class="px-5 py-3"></div>
+    </div>
+
+    <script src="attendance.js"></script>
+</body>
+</html>

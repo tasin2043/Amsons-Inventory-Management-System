@@ -1,7 +1,7 @@
 let registerWebcamInstance = null;
 let currentAllocatedStaffId = ""; 
 
-// 🧠 1. ROLE BLOCKING FIREWALL PATTERNS INTEGRATION PIPELINE
+// Admin/management roles need a security code to select
 if (document.getElementById("registerRole")) {
     document.getElementById("registerRole").addEventListener("change", (event) => {
         const selectedRole = event.target.value;
@@ -14,7 +14,7 @@ if (document.getElementById("registerRole")) {
                 displayNotification("✅ Admin authorization verified. Access granted to select role schema.", true);
             } else {
                 alert("❌ INVALID SECURITY KEY! Access to Administrator clearance level has been rejected.");
-                event.target.value = "staff"; // Downgrade mapping fallback structure reset
+                event.target.value = "staff"; // reset to default role
                 displayNotification("⚠️ Security warning logs saved: Unauthorized admin upgrade attempt detected.", false);
             }
         } else if (selectedRole === "management") {
@@ -25,52 +25,88 @@ if (document.getElementById("registerRole")) {
                 displayNotification("✅ Management credentials matched. Access granted to structural role config.", true);
             } else {
                 alert("❌ INVALID SECURITY KEY! Management privileges upgrade pipeline execution terminated.");
-                event.target.value = "staff"; // Reset to standard fallback
+                event.target.value = "staff"; // reset to default role
                 displayNotification("⚠️ System context warning logs saved: Verification mismatch on role change operation.", false);
             }
         }
     });
 }
 
-// 📸 2. SMART MODAL POPUP GATEWAY CONTROLLER ENGINE HANDLERS
+// Guided multi-angle Face ID enrollment: captures several head angles so
+// recognition works reliably later under different lighting/angles.
+const FACE_ENROLL_STEPS = [
+    "Look straight at the camera",
+    "Slowly turn your head to the LEFT",
+    "Slowly turn your head to the RIGHT",
+    "Tilt your head UP a little",
+    "Tilt your head DOWN a little"
+];
+let capturedFacePhotos = [];
+
 function openCameraModalUI() {
     const modalFrame = document.getElementById("cameraPopupModal");
     if(modalFrame) {
-        modalFrame.classList.remove("hidden");
-        initializeWebcam(); 
+        openRightSlidePanel("cameraPopupModal");
+        initializeWebcam();
     }
 }
 
-// Fixed camera UI modal termination triggers
 function closeCameraModalUI() {
     const modalFrame = document.getElementById("cameraPopupModal");
     if(modalFrame) {
-        modalFrame.classList.add("hidden");
+        closeRightSlidePanel("cameraPopupModal");
         terminateWebcam();
     }
 }
 
-// Camera initialization routing parameters (Synced square capture limits)
+function renderFaceStepUi() {
+    const stepRow = document.getElementById("faceStepRow");
+    const stepText = document.getElementById("faceStepText");
+    const dotsRow = document.getElementById("faceStepDots");
+    const snapBtn = document.getElementById("captureSnapBtn");
+    if(!stepRow || !stepText || !dotsRow) return;
+
+    const step = capturedFacePhotos.length;
+    stepRow.classList.remove("hidden");
+    dotsRow.innerHTML = FACE_ENROLL_STEPS.map((_, i) =>
+        `<span class="w-2 h-2 rounded-full ${i < step ? 'bg-[#E6B950]' : 'bg-zinc-700'}"></span>`
+    ).join("");
+
+    if (step < FACE_ENROLL_STEPS.length) {
+        stepText.innerText = `Step ${step + 1} of ${FACE_ENROLL_STEPS.length}: ${FACE_ENROLL_STEPS[step]}`;
+        if (snapBtn) snapBtn.innerText = `📸 CAPTURE PHOTO ${step + 1} / ${FACE_ENROLL_STEPS.length}`;
+    }
+}
+
 async function initializeWebcam() {
     const videoElement = document.getElementById("webcamStream");
     const canvasElement = document.getElementById("photoCanvas");
     const snapBtn = document.getElementById("captureSnapBtn");
+    const retakeBtn = document.getElementById("retakeAllBtn");
+    const statusLabel = document.getElementById("faceStatus");
+
+    capturedFacePhotos = [];
+    if (retakeBtn) retakeBtn.classList.add("hidden");
+    if (statusLabel) {
+        statusLabel.innerText = "Face Scan Required";
+        statusLabel.className = "mt-2 text-gray-400 text-xs font-mono";
+    }
 
     try {
         if(canvasElement) canvasElement.classList.add("hidden");
         if(videoElement) videoElement.classList.remove("hidden");
 
-        registerWebcamInstance = await navigator.mediaDevices.getUserMedia({ 
-            video: { facingMode: "user", width: 480, height: 480 }, 
-            audio: false 
+        registerWebcamInstance = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
+            audio: false
         });
         videoElement.srcObject = registerWebcamInstance;
-        
+
         if(snapBtn) {
             snapBtn.classList.remove("hidden");
-            snapBtn.innerText = "📸 CAPTURE MATRIX SNAPSHOT";
             snapBtn.disabled = false;
         }
+        renderFaceStepUi();
     } catch (error) {
         console.error("Camera interface deployment error tracker log:", error);
         displayNotification("Camera connection blocked. Please grant browser physical layer permissions.", false);
@@ -83,37 +119,49 @@ function captureSnapshot() {
     const canvasElement = document.getElementById("photoCanvas");
     const hiddenInput = document.getElementById("capturedPhotoData");
     const snapBtn = document.getElementById("captureSnapBtn");
+    const retakeBtn = document.getElementById("retakeAllBtn");
     const statusLabel = document.getElementById("faceStatus");
 
     if(!videoElement || !canvasElement) return;
 
     const context = canvasElement.getContext("2d");
-    canvasElement.width = videoElement.videoWidth || 480;
+    canvasElement.width = videoElement.videoWidth || 640;
     canvasElement.height = videoElement.videoHeight || 480;
-    
     context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-    
-    const base64Data = canvasElement.toDataURL("image/jpeg", 0.90);
-    if(hiddenInput) hiddenInput.value = base64Data; 
 
-    videoElement.classList.add("hidden");
-    canvasElement.classList.remove("hidden");
-    
-    if(statusLabel) {
-        statusLabel.innerText = "📸 Snapshot Template Locked in Framework State!";
-        statusLabel.className = "mt-2 text-emerald-400 text-xs font-bold uppercase tracking-widest animate-pulse";
+    capturedFacePhotos.push(canvasElement.toDataURL("image/jpeg", 0.92));
+    if(hiddenInput) hiddenInput.value = capturedFacePhotos[0];
+
+    if (capturedFacePhotos.length >= FACE_ENROLL_STEPS.length) {
+        // All angles captured - freeze last frame as preview and stop the camera
+        videoElement.classList.add("hidden");
+        canvasElement.classList.remove("hidden");
+        terminateWebcam();
+
+        if (snapBtn) snapBtn.classList.add("hidden");
+        if (retakeBtn) retakeBtn.classList.remove("hidden");
+
+        if(statusLabel) {
+            statusLabel.innerText = `✔ ${capturedFacePhotos.length} angles captured for Face ID`;
+            statusLabel.className = "mt-2 text-emerald-400 text-xs font-bold uppercase tracking-widest";
+        }
+
+        renderFaceStepUi();
+        setTimeout(() => { closeCameraModalUI(); }, 1200);
+    } else {
+        // Camera stays on, move to the next angle
+        renderFaceStepUi();
+        if(statusLabel) {
+            statusLabel.innerText = `✔ Photo ${capturedFacePhotos.length} captured - keep going`;
+            statusLabel.className = "mt-2 text-emerald-400 text-xs font-bold uppercase tracking-widest";
+        }
     }
-    
-    if(snapBtn) {
-        snapBtn.innerText = "✓ TEMPLATE STORED!";
-        snapBtn.disabled = true;
-    }
-    
-    terminateWebcam();
-    
-    setTimeout(() => {
-        closeCameraModalUI();
-    }, 1200);
+}
+
+function retakeAllSnapshots() {
+    const hiddenInput = document.getElementById("capturedPhotoData");
+    if (hiddenInput) hiddenInput.value = "";
+    initializeWebcam();
 }
 
 function terminateWebcam() {
@@ -123,7 +171,7 @@ function terminateWebcam() {
     }
 }
 
-// 📌 SUBMIT PIPELINE ENGINE HANDLER WITH FASTAPI ROUTING ARCHITECTURE
+// Register form submit handler
 document.getElementById("registerForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -132,17 +180,16 @@ document.getElementById("registerForm").addEventListener("submit", async (event)
     const staffEmailAddress = document.getElementById("regEmail").value.trim();
     const rawInputPassword = document.getElementById("registerPassword").value.trim();
     const accountRolePermission = document.getElementById("registerRole").value;
-    const base64FaceSnapshot = document.getElementById("capturedPhotoData").value;
 
-    const exactFourDigitPinRegex = /^\d{4}$/;
-    
-    if (!exactFourDigitPinRegex.test(rawInputPassword)) {
-        displayNotification("❌ Security rule mismatch! PIN must be exactly 4 numeric digits.", false);
+    const strongPasswordRegex = /^\d{4}$/;  // PIN must be exactly 4 digits
+
+    if (!strongPasswordRegex.test(rawInputPassword)) {
+        displayNotification("PIN matrix mismatch! Ensure your PIN is exactly 4 digits long and contains only numbers.", false);
         return;
     }
 
-    if (!base64FaceSnapshot) {
-        displayNotification("❌ Face verification identity trace missing! Run camera pipeline capture first.", false);
+    if (capturedFacePhotos.length < FACE_ENROLL_STEPS.length) {
+        displayNotification(`❌ Face verification incomplete! Capture all ${FACE_ENROLL_STEPS.length} Face ID angles first.`, false);
         return;
     }
 
@@ -153,7 +200,7 @@ document.getElementById("registerForm").addEventListener("submit", async (event)
         registrationPayloadData.append("email", staffEmailAddress);
         registrationPayloadData.append("password", rawInputPassword);
         registrationPayloadData.append("role", accountRolePermission);
-        registrationPayloadData.append("facePhoto", base64FaceSnapshot);
+        capturedFacePhotos.forEach(photo => registrationPayloadData.append("facePhotos", photo));
 
         displayNotification("Encrypting and saving user profile configuration pipeline to database...", true);
 
@@ -166,37 +213,33 @@ document.getElementById("registerForm").addEventListener("submit", async (event)
 
         if (networkResponse.ok) {
             displayNotification(`Registration Successful! Identity bound to ID: ${allocatedStaffId}. Please log in now.`, true);
-            
+
             document.getElementById("registerForm").reset();
             if(document.getElementById("capturedPhotoData")) document.getElementById("capturedPhotoData").value = "";
-            
+            capturedFacePhotos = [];
+
             const faceLabel = document.getElementById("faceStatus");
             if(faceLabel) {
                 faceLabel.innerText = "Face Scan Required";
                 faceLabel.className = "mt-2 text-gray-400 text-xs font-mono";
             }
+            const stepRow = document.getElementById("faceStepRow");
+            if (stepRow) stepRow.classList.add("hidden");
+            const retakeBtn = document.getElementById("retakeAllBtn");
+            if (retakeBtn) retakeBtn.classList.add("hidden");
 
-            // 🚀 FIXED: Auto routing container mapping fallback loop initialization
             setTimeout(() => {
-                if (typeof toggleAuthMode === "function") {
-                    toggleAuthMode(false); 
-                } else {
-                    const registerView = document.getElementById("registerFormContainer");
-                    const landingView = document.getElementById("authLandingView");
-                    if (registerView) registerView.classList.add("hidden");
-                    if (landingView) landingView.classList.remove("hidden");
-                }
-            }, 2500);
+                toggleAuthMode(false);
+            }, 3000);
         } else {
-            displayNotification(logDataResult.detail || "Registration processing firewall rejected the connection request.", false);
+            displayNotification(logDataResult.detail || "Registration processing firewall rejected the connection request.");
         }
     } catch (apiErrorTracer) {
         console.error("Staff registration system exception tracking breakdown:", apiErrorTracer);
-        displayNotification("Failed to contact centralized database access authentication mapping servers.", false);
+        displayNotification("Failed to contact centralized database access authentication mapping servers.");
     }
 });
 
-// ─── INITIALIZATION PIPELINE FOR SEQUENTIAL IDS ───
 async function initializeRegistrationFormUI() {
     try {
         const response = await fetch(`${apiUrl}/api/next-staff-id`);
@@ -204,27 +247,8 @@ async function initializeRegistrationFormUI() {
         
         if (response.ok && data.status === "success") {
             document.getElementById("liveAllocatedIdDisplay").innerText = data.next_id;
-            announceVoiceGuidance(); 
         }
     } catch (err) {
         console.error("System staff tracking directories network connectivity issue:", err);
-    }
-}
-
-if (document.getElementById("goToRegisterBtn")) {
-    document.getElementById("goToRegisterBtn").addEventListener("click", () => {
-        initializeRegistrationFormUI(); 
-    });
-}
-
-function announceVoiceGuidance() {
-    if ('speechSynthesis' in window) {
-        const instructionText = "Please note down the User I D displayed above. You will need this I D along with your password to login to the system.";
-        const voiceUtterance = new SpeechSynthesisUtterance(instructionText);
-        voiceUtterance.lang = 'en-US';   
-        voiceUtterance.rate = 0.85;      
-        voiceUtterance.pitch = 1.0;     
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.speak(voiceUtterance);
     }
 }
